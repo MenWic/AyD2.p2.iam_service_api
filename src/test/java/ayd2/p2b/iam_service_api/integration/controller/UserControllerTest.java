@@ -1,12 +1,12 @@
 package ayd2.p2b.iam_service_api.integration.controller;
 
-import ayd2.p2b.iam_service_api.application.dto.user.UserResponse;
-import ayd2.p2b.iam_service_api.application.port.security.TokenParserPort;
-import ayd2.p2b.iam_service_api.application.usecase.auth.RegisterParticipantUseCase;
-import ayd2.p2b.iam_service_api.application.usecase.user.GetCurrentUserUseCase;
-import ayd2.p2b.iam_service_api.controller.user.UserController;
-import ayd2.p2b.iam_service_api.domain.model.user.Role;
-import ayd2.p2b.iam_service_api.infrastructure.security.principal.AuthenticatedUser;
+import ayd2.p2b.iam_service_api.feature.auth.application.port.TokenParserPort;
+import ayd2.p2b.iam_service_api.feature.auth.infrastructure.security.principal.AuthenticatedUser;
+import ayd2.p2b.iam_service_api.feature.auth.application.register.RegisterParticipantUseCase;
+import ayd2.p2b.iam_service_api.feature.user.application.current.GetCurrentUserUseCase;
+import ayd2.p2b.iam_service_api.feature.user.dto.response.UserResponse;
+import ayd2.p2b.iam_service_api.feature.user.domain.model.Role;
+import ayd2.p2b.iam_service_api.feature.user.controller.UserController;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -22,6 +22,7 @@ import java.util.UUID;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -32,12 +33,82 @@ class UserControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean
-    private GetCurrentUserUseCase getCurrentUserUseCase;
-    @MockitoBean
-    private RegisterParticipantUseCase registerParticipantUseCase;
-    @MockitoBean
-    private TokenParserPort tokenParserPort;
+    @MockitoBean private GetCurrentUserUseCase getCurrentUserUseCase;
+    @MockitoBean private RegisterParticipantUseCase registerParticipantUseCase;
+    @MockitoBean private TokenParserPort tokenParserPort;
+
+    @Test
+    void should_return_400_when_registering_with_missing_organization() throws Exception {
+        String invalidPayload = """
+                {
+                    "email": "test@domain.com",
+                    "password": "Password123",
+                    "fullName": "Jane Doe",
+                    "phone": "555-0101",
+                    "personalId": "A123B"
+                }
+                """;
+
+        mockMvc.perform(post("/users/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidPayload))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void should_return_400_when_registering_with_missing_phone() throws Exception {
+        String invalidPayload = """
+                {
+                    "email": "test@domain.com",
+                    "password": "Password123",
+                    "fullName": "Jane Doe",
+                    "organization": "Code n Bugs",
+                    "personalId": "A123B"
+                }
+                """;
+
+        mockMvc.perform(post("/users/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidPayload))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void should_return_400_when_registering_with_missing_personalId() throws Exception {
+        String invalidPayload = """
+                {
+                    "email": "test@domain.com",
+                    "password": "Password123",
+                    "fullName": "Jane Doe",
+                    "organization": "Code n Bugs",
+                    "phone": "555-0101"
+                }
+                """;
+
+        mockMvc.perform(post("/users/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidPayload))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void should_return_400_when_registering_with_short_password() throws Exception {
+        String invalidPayload = """
+                {
+                    "email": "test@domain.com",
+                    "password": "short",
+                    "fullName": "Jane Doe",
+                    "organization": "Code n Bugs",
+                    "phone": "555-0101",
+                    "personalId": "A123B"
+                }
+                """;
+
+        mockMvc.perform(post("/users/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidPayload))
+                .andExpect(status().isBadRequest());
+    }
 
     @Test
     void should_return_current_user_when_authenticated_request_is_sent() throws Exception {
