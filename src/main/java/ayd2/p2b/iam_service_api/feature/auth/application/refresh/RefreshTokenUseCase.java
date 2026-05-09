@@ -45,7 +45,7 @@ public class RefreshTokenUseCase {
         if (blacklistPort.existsByTokenHash(tokenHash)) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "auth.token_invalid", "Refresh token is invalidated");
         }
-        UserAccount user = userRepository.findByIdAndActiveTrue(parsedToken.userId())
+        UserAccount user = userRepository.findByIdAndActiveTrue(parsedToken.getUserId())
                 .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "auth.token_invalid", "User not active"));
 
         return RefreshResponse.builder()

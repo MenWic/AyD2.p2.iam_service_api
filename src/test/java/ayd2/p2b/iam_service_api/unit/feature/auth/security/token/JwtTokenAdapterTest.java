@@ -41,8 +41,8 @@ class JwtTokenAdapterTest {
         String accessToken = jwtTokenAdapter.generateAccessToken(user);
         ParsedToken parsedToken = jwtTokenAdapter.parseToken(accessToken, TokenType.ACCESS);
 
-        assertTrue(parsedToken.roles().contains("PARTICIPANT"));
-        assertTrue(parsedToken.roles().contains("CONGRESS_ADMIN"));
+        assertTrue(parsedToken.getRoles().contains("PARTICIPANT"));
+        assertTrue(parsedToken.getRoles().contains("CONGRESS_ADMIN"));
     }
 
     @Test

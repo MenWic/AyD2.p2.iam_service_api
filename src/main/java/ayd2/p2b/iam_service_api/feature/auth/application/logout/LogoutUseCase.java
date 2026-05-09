@@ -33,12 +33,12 @@ public class LogoutUseCase {
     @Transactional
     public void execute(UUID authenticatedUserId, LogoutRequest request) {
         ParsedToken parsedToken = tokenParserPort.parseToken(request.getRefreshToken(), TokenType.REFRESH);
-        if (!authenticatedUserId.equals(parsedToken.userId())) {
+        if (!authenticatedUserId.equals(parsedToken.getUserId())) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "auth.token_invalid", "Refresh token does not belong to user");
         }
         String tokenHash = tokenHashPort.sha256(request.getRefreshToken());
         if (!blacklistPort.existsByTokenHash(tokenHash)) {
-            blacklistPort.save(tokenHash, parsedToken.userId(), parsedToken.expiresAt());
+            blacklistPort.save(tokenHash, parsedToken.getUserId(), parsedToken.getExpiresAt());
         }
     }
 }

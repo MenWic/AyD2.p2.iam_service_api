@@ -1,4 +1,4 @@
-package ayd2.p2b.iam_service_api.feature.auth.infrastructure.security.principal;
+package ayd2.p2b.iam_service_api.feature.user.dto.internal;
 
 import ayd2.p2b.iam_service_api.feature.user.domain.model.Role;
 import lombok.AllArgsConstructor;
@@ -13,9 +13,7 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuthenticatedUser {
+public class RequesterContext {
     private UUID userId;
-    private String email;
     private Set<Role> roles;
 }
-

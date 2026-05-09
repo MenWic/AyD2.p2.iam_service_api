@@ -41,8 +41,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String token = authHeader.substring(7);
         try {
             ParsedToken parsed = tokenParserPort.parseToken(token, TokenType.ACCESS);
-            Set<Role> roles = parsed.roles().stream().map(Role::valueOf).collect(Collectors.toSet());
-            AuthenticatedUser principal = new AuthenticatedUser(parsed.userId(), parsed.email(), roles);
+            Set<Role> roles = parsed.getRoles().stream().map(Role::valueOf).collect(Collectors.toSet());
+            AuthenticatedUser principal = new AuthenticatedUser(parsed.getUserId(), parsed.getEmail(), roles);
 
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                     principal,

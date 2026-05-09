@@ -1,6 +1,7 @@
 package ayd2.p2b.iam_service_api.feature.auth.controller;
 
 import ayd2.p2b.iam_service_api.common.exception.ApiException;
+import ayd2.p2b.iam_service_api.common.response.ApiResponse;
 import ayd2.p2b.iam_service_api.feature.auth.application.login.LoginUseCase;
 import ayd2.p2b.iam_service_api.feature.auth.application.logout.LogoutUseCase;
 import ayd2.p2b.iam_service_api.feature.auth.application.refresh.RefreshTokenUseCase;
@@ -38,14 +39,14 @@ public class AuthController {
 
     @PostMapping("/login")
     @Operation(summary = "Login user")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        return ResponseEntity.ok(loginUseCase.execute(request));
+    public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(ApiResponse.of(loginUseCase.execute(request)));
     }
 
     @PostMapping("/refresh")
     @Operation(summary = "Refresh access token")
-    public ResponseEntity<RefreshResponse> refresh(@Valid @RequestBody RefreshRequest request) {
-        return ResponseEntity.ok(refreshTokenUseCase.execute(request));
+    public ResponseEntity<ApiResponse<RefreshResponse>> refresh(@Valid @RequestBody RefreshRequest request) {
+        return ResponseEntity.ok(ApiResponse.of(refreshTokenUseCase.execute(request)));
     }
 
     @PostMapping("/logout")
@@ -54,7 +55,7 @@ public class AuthController {
         if (!(authentication.getPrincipal() instanceof AuthenticatedUser authenticatedUser)) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "auth.token_invalid", "Invalid authentication");
         }
-        logoutUseCase.execute(authenticatedUser.userId(), request);
+        logoutUseCase.execute(authenticatedUser.getUserId(), request);
         return ResponseEntity.noContent().build();
     }
 }

@@ -7,7 +7,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Value
-@Builder
+@Builder(toBuilder = true)
 public class UserAccount {
     UUID id;
     String email;
@@ -19,5 +19,8 @@ public class UserAccount {
     String photoUrl;
     Boolean active;
     Set<Role> roles;
+    Set<UUID> linkedInstitutions;
+    UUID createdBy;
+    UUID updatedBy;
 }
 
