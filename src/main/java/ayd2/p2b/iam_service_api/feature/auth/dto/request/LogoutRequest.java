@@ -9,7 +9,7 @@ import lombok.Data;
 public class LogoutRequest {
 
     @NotBlank
-    @Schema(example = "<refresh-token>")
+    @Schema(description = "Refresh token to invalidate", example = "eyJhbGciOiJIUzI1NiJ9.refresh.payload", requiredMode = Schema.RequiredMode.REQUIRED)
     private String refreshToken;
 }
 

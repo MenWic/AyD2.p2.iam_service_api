@@ -9,7 +9,7 @@ import lombok.Data;
 public class RefreshRequest {
 
     @NotBlank
-    @Schema(example = "<refresh-token>")
+    @Schema(description = "Valid refresh token credential", example = "eyJhbGciOiJIUzI1NiJ9.refresh.payload", requiredMode = Schema.RequiredMode.REQUIRED)
     private String refreshToken;
 }
 

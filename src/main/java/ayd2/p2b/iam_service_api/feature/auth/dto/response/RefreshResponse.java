@@ -8,6 +8,7 @@ import lombok.Data;
 @Builder
 @Schema(description = "Refresh response")
 public class RefreshResponse {
+    @Schema(description = "New JWT access token")
     private String accessToken;
 }
 

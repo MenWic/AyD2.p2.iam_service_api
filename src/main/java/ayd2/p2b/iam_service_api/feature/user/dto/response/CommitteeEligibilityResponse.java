@@ -13,5 +13,6 @@ import lombok.NoArgsConstructor;
 @Schema(description = "Committee eligibility result")
 public class CommitteeEligibilityResponse {
 
+    @Schema(description = "Whether user can be assigned as committee member", example = "true")
     private boolean eligible;
 }

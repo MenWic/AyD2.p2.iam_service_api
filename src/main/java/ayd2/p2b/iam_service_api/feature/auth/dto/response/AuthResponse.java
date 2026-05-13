@@ -10,8 +10,11 @@ import lombok.Data;
 @Schema(description = "Authentication response")
 public class AuthResponse {
 
+    @Schema(description = "JWT access token")
     private String accessToken;
+    @Schema(description = "JWT refresh token")
     private String refreshToken;
+    @Schema(description = "Authenticated user profile")
     private UserResponse user;
 }
 

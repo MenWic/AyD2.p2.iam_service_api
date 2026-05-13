@@ -12,7 +12,7 @@ public class CreateGuestSpeakerRequest {
 
     @NotBlank
     @Email
-    @Schema(example = "guestspeaker@domain.com")
+    @Schema(example = "guestspeaker@domain.com", format = "email", requiredMode = Schema.RequiredMode.REQUIRED)
     private String email;
 
     @NotBlank
@@ -29,12 +29,12 @@ public class CreateGuestSpeakerRequest {
 
     @NotBlank
     @Pattern(regexp = "^[A-Za-z0-9]+$")
-    @Schema(example = "A123B")
+    @Schema(example = "A123B", pattern = "^[A-Za-z0-9]+$", requiredMode = Schema.RequiredMode.REQUIRED)
     private String personalId;
 
     @Schema(example = "https://cdn.domain.com/photo.png")
     private String photoUrl;
 
-    @Schema(description = "Optional password. If blank or missing, password hash remains null.")
+    @Schema(description = "Optional password. If blank or missing, password hash remains null.", minLength = 8, maxLength = 128, nullable = true)
     private String password;
 }

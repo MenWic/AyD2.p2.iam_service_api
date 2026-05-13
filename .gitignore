@@ -37,7 +37,11 @@ out/
 .vscode/
 
 ### Secrets & Environment ###
+#### Local with Eureka Server
 /src/main/resources/application.properties
+#### Local without Eureka Server
+src/main/resources/application-discovery.properties
+#### CI DevOps (For AWS CodeBuild, GitHub Actions, DockerFile, etc.)
 /src/main/resources/application.properties.production
 .env
 .env.local

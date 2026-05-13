@@ -11,11 +11,11 @@ public class LoginRequest {
 
     @NotBlank
     @Email
-    @Schema(example = "user@domain.com")
+    @Schema(description = "User email", example = "user@domain.com", format = "email", requiredMode = Schema.RequiredMode.REQUIRED)
     private String email;
 
     @NotBlank
-    @Schema(example = "MyStrongPassword123")
+    @Schema(description = "User password", example = "MyStrongPassword123", minLength = 8, maxLength = 128, requiredMode = Schema.RequiredMode.REQUIRED)
     private String password;
 }
 

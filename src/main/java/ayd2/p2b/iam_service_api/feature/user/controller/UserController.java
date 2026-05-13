@@ -3,6 +3,7 @@ package ayd2.p2b.iam_service_api.feature.user.controller;
 import ayd2.p2b.iam_service_api.common.exception.ApiException;
 import ayd2.p2b.iam_service_api.common.response.ApiResponse;
 import ayd2.p2b.iam_service_api.common.response.PageResponse;
+import ayd2.p2b.iam_service_api.core.openapi.OpenApiExamples;
 import ayd2.p2b.iam_service_api.feature.auth.application.register.RegisterParticipantUseCase;
 import ayd2.p2b.iam_service_api.feature.auth.dto.response.AuthResponse;
 import ayd2.p2b.iam_service_api.feature.auth.infrastructure.security.principal.AuthenticatedUser;
@@ -27,11 +28,18 @@ import ayd2.p2b.iam_service_api.feature.user.dto.request.UpdateUserRequest;
 import ayd2.p2b.iam_service_api.feature.user.dto.response.CommitteeEligibilityResponse;
 import ayd2.p2b.iam_service_api.feature.user.dto.response.UserResponse;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -94,26 +102,94 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    @Operation(summary = "Self register participant")
-    public ResponseEntity<ApiResponse<AuthResponse>> register(@Valid @RequestBody RegisterUserRequest request) {
+    @Operation(
+            summary = "Self register participant",
+            description = "Public endpoint. Registers a PARTICIPANT. personalId is required, alphanumeric, and unique."
+    )
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Participant registered",
+                    content = @Content(mediaType = "application/json", examples = @ExampleObject(value = OpenApiExamples.AUTH_SUCCESS))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation failed",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.VALIDATION_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "Email or personalId conflict",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.CONFLICT_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "500", description = "Unexpected error",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.INTERNAL_ERROR)))
+    })
+    public ResponseEntity<ApiResponse<AuthResponse>> register(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = true,
+                    description = "Participant registration payload",
+                    content = @Content(mediaType = "application/json", examples = @ExampleObject(value = OpenApiExamples.REGISTER_REQUEST))
+            )
+            @Valid @RequestBody RegisterUserRequest request
+    ) {
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(registerParticipantUseCase.execute(request)));
     }
 
     @GetMapping("/me")
-    @Operation(summary = "Get authenticated user profile")
+    @Operation(summary = "Get authenticated user profile", description = "Protected endpoint. Returns current authenticated user profile.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Profile fetched",
+                    content = @Content(mediaType = "application/json", examples = @ExampleObject(value = OpenApiExamples.USER_SUCCESS))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid or missing token",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.TOKEN_INVALID_ERROR)))
+    })
     public ResponseEntity<ApiResponse<UserResponse>> me(Authentication authentication) {
         return ResponseEntity.ok(ApiResponse.of(getCurrentUserUseCase.execute(getAuthenticatedUser(authentication).getUserId())));
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get user by id")
+    @Operation(
+            summary = "Get user by id",
+            description = "Protected endpoint. Allowed for self, SYSTEM_ADMIN, and institution-scoped CONGRESS_ADMIN."
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User found",
+                    content = @Content(mediaType = "application/json", examples = @ExampleObject(value = OpenApiExamples.USER_SUCCESS))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid or missing token",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.TOKEN_INVALID_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.FORBIDDEN_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.NOT_FOUND_ERROR)))
+    })
     public ResponseEntity<ApiResponse<UserResponse>> getById(@PathVariable UUID id, Authentication authentication) {
         RequesterContext requester = toRequesterContext(authentication);
         return ResponseEntity.ok(ApiResponse.of(getUserByIdUseCase.execute(requester, id)));
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Update user profile")
+    @Operation(
+            summary = "Update user profile",
+            description = "Protected endpoint. Allowed for self or SYSTEM_ADMIN. Updates editable profile fields only; does not modify email, personalId, roles, active, password, or institutions."
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User updated",
+                    content = @Content(mediaType = "application/json", examples = @ExampleObject(value = OpenApiExamples.USER_SUCCESS))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation failed",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.VALIDATION_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid or missing token",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.TOKEN_INVALID_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.FORBIDDEN_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.NOT_FOUND_ERROR)))
+    })
     public ResponseEntity<ApiResponse<UserResponse>> update(
             @PathVariable UUID id,
             @Valid @RequestBody UpdateUserRequest request,
@@ -124,7 +200,21 @@ public class UserController {
     }
 
     @GetMapping("/{id}/can-be-committee")
-    @Operation(summary = "Validate if user can be committee member")
+    @Operation(
+            summary = "Validate if user can be committee member",
+            description = "Protected endpoint. Current JWT mode allows only CONGRESS_ADMIN callers. Used by conference-service to validate committee eligibility."
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Eligibility result returned",
+                    content = @Content(mediaType = "application/json", examples = @ExampleObject(value = OpenApiExamples.COMMITTEE_ELIGIBILITY_SUCCESS))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid or missing token",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.TOKEN_INVALID_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.FORBIDDEN_ERROR)))
+    })
     public ResponseEntity<ApiResponse<CommitteeEligibilityResponse>> canBeCommittee(
             @PathVariable UUID id,
             Authentication authentication
@@ -134,13 +224,36 @@ public class UserController {
     }
 
     @GetMapping
-    @Operation(summary = "List users")
+    @Operation(
+            summary = "List users",
+            description = "Protected endpoint. Allowed for SYSTEM_ADMIN and institution-scoped CONGRESS_ADMIN. Returns paginated users."
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "Users listed",
+                    content = @Content(mediaType = "application/json", examples = @ExampleObject(value = OpenApiExamples.PAGED_USERS_SUCCESS))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Invalid query parameters",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.VALIDATION_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid or missing token",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.TOKEN_INVALID_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.FORBIDDEN_ERROR)))
+    })
     public ResponseEntity<ApiResponse<PageResponse<UserResponse>>> list(
+            @Parameter(description = "Filter by role", example = "PARTICIPANT")
             @RequestParam(required = false) Role role,
+            @Parameter(description = "Filter by active status", example = "true")
             @RequestParam(required = false) Boolean active,
+            @Parameter(description = "Filter by institution UUID", example = "22222222-2222-2222-2222-222222222222")
             @RequestParam(required = false) UUID institutionId,
+            @Parameter(description = "Search by name, email, or personalId", example = "jane")
             @RequestParam(required = false) String search,
+            @Parameter(description = "Page number (default: 0)", example = "0")
             @RequestParam(defaultValue = "0") Integer page,
+            @Parameter(description = "Page size (default: 20, max: 100)", example = "20")
             @RequestParam(defaultValue = "20") Integer size,
             Authentication authentication
     ) {
@@ -160,21 +273,72 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/activate")
-    @Operation(summary = "Activate user")
+    @Operation(summary = "Activate user", description = "Protected endpoint. Allowed only for SYSTEM_ADMIN.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User activated",
+                    content = @Content(mediaType = "application/json", examples = @ExampleObject(value = OpenApiExamples.USER_SUCCESS))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid or missing token",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.TOKEN_INVALID_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.FORBIDDEN_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.NOT_FOUND_ERROR)))
+    })
     public ResponseEntity<ApiResponse<UserResponse>> activate(@PathVariable UUID id, Authentication authentication) {
         RequesterContext requester = toRequesterContext(authentication);
         return ResponseEntity.ok(ApiResponse.of(activateUserUseCase.execute(requester, id)));
     }
 
     @PatchMapping("/{id}/deactivate")
-    @Operation(summary = "Deactivate user")
+    @Operation(
+            summary = "Deactivate user",
+            description = "Protected endpoint. Allowed only for SYSTEM_ADMIN. Rejects request if it would leave zero active SYSTEM_ADMIN users."
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "User deactivated",
+                    content = @Content(mediaType = "application/json", examples = @ExampleObject(value = OpenApiExamples.USER_SUCCESS))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid or missing token",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.TOKEN_INVALID_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.FORBIDDEN_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "404", description = "User not found",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.NOT_FOUND_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "Invariant violation (last active SYSTEM_ADMIN)",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.CONFLICT_ERROR)))
+    })
     public ResponseEntity<ApiResponse<UserResponse>> deactivate(@PathVariable UUID id, Authentication authentication) {
         RequesterContext requester = toRequesterContext(authentication);
         return ResponseEntity.ok(ApiResponse.of(deactivateUserUseCase.execute(requester, id)));
     }
 
     @PostMapping("/system-admins")
-    @Operation(summary = "Create system admin")
+    @Operation(summary = "Create system admin", description = "Protected endpoint. Allowed only for SYSTEM_ADMIN.")
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "System admin created",
+                    content = @Content(mediaType = "application/json", examples = @ExampleObject(value = OpenApiExamples.USER_SUCCESS))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation failed",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.VALIDATION_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid or missing token",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.TOKEN_INVALID_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.FORBIDDEN_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "Email or personalId conflict",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.CONFLICT_ERROR)))
+    })
     public ResponseEntity<ApiResponse<UserResponse>> createSystemAdmin(
             @Valid @RequestBody CreateSystemAdminRequest request,
             Authentication authentication
@@ -185,7 +349,27 @@ public class UserController {
     }
 
     @PostMapping("/congress-admins")
-    @Operation(summary = "Create congress admin")
+    @Operation(
+            summary = "Create congress admin",
+            description = "Protected endpoint. Allowed only for SYSTEM_ADMIN. Creates CONGRESS_ADMIN and links institutions. institutionIds is required and non-empty."
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Congress admin created",
+                    content = @Content(mediaType = "application/json", examples = @ExampleObject(value = OpenApiExamples.USER_SUCCESS))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation failed",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.VALIDATION_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid or missing token",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.TOKEN_INVALID_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.FORBIDDEN_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "Email or personalId conflict",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.CONFLICT_ERROR)))
+    })
     public ResponseEntity<ApiResponse<UserResponse>> createCongressAdmin(
             @Valid @RequestBody CreateCongressAdminRequest request,
             Authentication authentication
@@ -196,7 +380,27 @@ public class UserController {
     }
 
     @PostMapping("/guest-speakers")
-    @Operation(summary = "Create guest speaker")
+    @Operation(
+            summary = "Create guest speaker",
+            description = "Protected endpoint. Allowed only for CONGRESS_ADMIN. Creates GUEST_SPEAKER. Password is optional and may be null/blank."
+    )
+    @SecurityRequirement(name = "bearerAuth")
+    @ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "Guest speaker created",
+                    content = @Content(mediaType = "application/json", examples = @ExampleObject(value = OpenApiExamples.USER_SUCCESS))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "Validation failed",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.VALIDATION_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "Invalid or missing token",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.TOKEN_INVALID_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "403", description = "Forbidden",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.FORBIDDEN_ERROR))),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "409", description = "Email or personalId conflict",
+                    content = @Content(mediaType = "application/problem+json", schema = @Schema(implementation = ProblemDetail.class),
+                            examples = @ExampleObject(value = OpenApiExamples.CONFLICT_ERROR)))
+    })
     public ResponseEntity<ApiResponse<UserResponse>> createGuestSpeaker(
             @Valid @RequestBody CreateGuestSpeakerRequest request,
             Authentication authentication

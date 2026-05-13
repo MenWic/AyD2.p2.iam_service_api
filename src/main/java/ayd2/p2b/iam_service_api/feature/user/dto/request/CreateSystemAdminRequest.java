@@ -13,12 +13,12 @@ public class CreateSystemAdminRequest {
 
     @NotBlank
     @Email
-    @Schema(example = "systemadmin@domain.com")
+    @Schema(example = "systemadmin@domain.com", format = "email", requiredMode = Schema.RequiredMode.REQUIRED)
     private String email;
 
     @NotBlank
     @Size(min = 8, max = 128)
-    @Schema(minLength = 8, maxLength = 128, example = "MyStrongPassword123")
+    @Schema(minLength = 8, maxLength = 128, example = "MyStrongPassword123", requiredMode = Schema.RequiredMode.REQUIRED)
     private String password;
 
     @NotBlank
@@ -35,7 +35,7 @@ public class CreateSystemAdminRequest {
 
     @NotBlank
     @Pattern(regexp = "^[A-Za-z0-9]+$")
-    @Schema(example = "A123B")
+    @Schema(example = "A123B", pattern = "^[A-Za-z0-9]+$", requiredMode = Schema.RequiredMode.REQUIRED)
     private String personalId;
 
     @Schema(example = "https://cdn.domain.com/photo.png")

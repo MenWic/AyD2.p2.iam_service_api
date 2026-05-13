@@ -18,12 +18,12 @@ public class CreateCongressAdminRequest {
 
     @NotBlank
     @Email
-    @Schema(example = "congressadmin@domain.com")
+    @Schema(example = "congressadmin@domain.com", format = "email", requiredMode = Schema.RequiredMode.REQUIRED)
     private String email;
 
     @NotBlank
     @Size(min = 8, max = 128)
-    @Schema(minLength = 8, maxLength = 128, example = "MyStrongPassword123")
+    @Schema(minLength = 8, maxLength = 128, example = "MyStrongPassword123", requiredMode = Schema.RequiredMode.REQUIRED)
     private String password;
 
     @NotBlank
@@ -40,13 +40,17 @@ public class CreateCongressAdminRequest {
 
     @NotBlank
     @Pattern(regexp = "^[A-Za-z0-9]+$")
-    @Schema(example = "A123B")
+    @Schema(example = "A123B", pattern = "^[A-Za-z0-9]+$", requiredMode = Schema.RequiredMode.REQUIRED)
     private String personalId;
 
     @Schema(example = "https://cdn.domain.com/photo.png")
     private String photoUrl;
 
     @NotEmpty
-    @Schema(description = "Linked institution IDs")
+    @Schema(
+            description = "Linked institution IDs",
+            example = "[\"22222222-2222-2222-2222-222222222222\"]",
+            requiredMode = Schema.RequiredMode.REQUIRED
+    )
     private Set<@NotNull UUID> institutionIds;
 }
