@@ -1,5 +1,6 @@
 package ayd2.p2b.iam_service_api.feature.auth.application.refresh;
 
+import ayd2.p2b.iam_service_api.feature.auth.application.exception.AuthExceptions;
 import ayd2.p2b.iam_service_api.feature.auth.dto.request.RefreshRequest;
 import ayd2.p2b.iam_service_api.feature.auth.dto.response.RefreshResponse;
 import ayd2.p2b.iam_service_api.feature.auth.application.port.RefreshTokenBlacklistPort;
@@ -8,10 +9,8 @@ import ayd2.p2b.iam_service_api.feature.auth.application.port.TokenHashPort;
 import ayd2.p2b.iam_service_api.feature.auth.application.port.TokenIssuerPort;
 import ayd2.p2b.iam_service_api.feature.auth.application.port.TokenParserPort;
 import ayd2.p2b.iam_service_api.feature.user.application.port.UserRepositoryPort;
-import ayd2.p2b.iam_service_api.common.exception.ApiException;
 import ayd2.p2b.iam_service_api.feature.auth.domain.model.TokenType;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.UserAccount;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,13 +39,18 @@ public class RefreshTokenUseCase {
 
     @Transactional(readOnly = true)
     public RefreshResponse execute(RefreshRequest request) {
-        ParsedToken parsedToken = tokenParserPort.parseToken(request.getRefreshToken(), TokenType.REFRESH);
-        String tokenHash = tokenHashPort.sha256(request.getRefreshToken());
+        if (request == null || request.getRefreshToken() == null || request.getRefreshToken().isBlank()) {
+            throw AuthExceptions.invalidRefreshToken();
+        }
+
+        String refreshToken = request.getRefreshToken();
+        ParsedToken parsedToken = tokenParserPort.parseToken(refreshToken, TokenType.REFRESH);
+        String tokenHash = tokenHashPort.sha256(refreshToken);
         if (blacklistPort.existsByTokenHash(tokenHash)) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "auth.token_invalid", "Refresh token is invalidated");
+            throw AuthExceptions.blacklistedRefreshToken();
         }
         UserAccount user = userRepository.findByIdAndActiveTrue(parsedToken.getUserId())
-                .orElseThrow(() -> new ApiException(HttpStatus.UNAUTHORIZED, "auth.token_invalid", "User not active"));
+                .orElseThrow(AuthExceptions::invalidRefreshToken);
 
         return RefreshResponse.builder()
                 .accessToken(tokenIssuerPort.generateAccessToken(user))

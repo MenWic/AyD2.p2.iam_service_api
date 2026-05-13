@@ -3,7 +3,6 @@ package ayd2.p2b.iam_service_api.unit.feature.auth.register;
 import ayd2.p2b.iam_service_api.common.exception.ApiException;
 import ayd2.p2b.iam_service_api.feature.auth.application.port.TokenIssuerPort;
 import ayd2.p2b.iam_service_api.feature.auth.application.register.RegisterParticipantUseCase;
-import ayd2.p2b.iam_service_api.feature.auth.dto.request.LoginRequest;
 import ayd2.p2b.iam_service_api.feature.auth.dto.response.AuthResponse;
 import ayd2.p2b.iam_service_api.feature.user.application.port.UserRepositoryPort;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.Role;
@@ -25,11 +24,14 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class RegisterParticipantUseCaseTest {
@@ -47,9 +49,17 @@ class RegisterParticipantUseCaseTest {
     }
 
     @Test
-    void should_register_participant_when_request_is_valid() {
+    void should_register_participant_with_normalized_identity_fields() {
         RegisterUserRequest request = request();
+        request.setEmail("  Participant@Domain.COM  ");
+        request.setPersonalId("  A123B  ");
+        request.setFullName("  Participant User  ");
+        request.setOrganization("  Code n Bugs  ");
+        request.setPhone("  555-0101  ");
+        request.setPhotoUrl("  https://cdn.domain.com/a.png  ");
+
         given(userRepository.existsByEmailIgnoreCase("participant@domain.com")).willReturn(false);
+        given(userRepository.existsByPersonalIdIgnoreCase("A123B")).willReturn(false);
         given(userRepository.save(any(UserAccount.class))).willAnswer(invocation -> invocation.getArgument(0));
         given(userMapper.toResponse(any(UserAccount.class))).willReturn(userResponse());
         given(tokenIssuerPort.generateAccessToken(any(UserAccount.class))).willReturn("access");
@@ -59,7 +69,17 @@ class RegisterParticipantUseCaseTest {
 
         ArgumentCaptor<UserAccount> userCaptor = ArgumentCaptor.forClass(UserAccount.class);
         verify(userRepository).save(userCaptor.capture());
-        assertTrue(userCaptor.getValue().getRoles().contains(Role.PARTICIPANT));
+        UserAccount saved = userCaptor.getValue();
+
+        verify(userRepository).existsByEmailIgnoreCase("participant@domain.com");
+        verify(userRepository).existsByPersonalIdIgnoreCase("A123B");
+        assertEquals("participant@domain.com", saved.getEmail());
+        assertEquals("A123B", saved.getPersonalId());
+        assertEquals("Participant User", saved.getFullName());
+        assertEquals("Code n Bugs", saved.getOrganization());
+        assertEquals("555-0101", saved.getPhone());
+        assertEquals("https://cdn.domain.com/a.png", saved.getPhotoUrl());
+        assertTrue(saved.getRoles().contains(Role.PARTICIPANT));
         assertNotNull(response.getUser());
         assertEquals("access", response.getAccessToken());
     }
@@ -70,7 +90,51 @@ class RegisterParticipantUseCaseTest {
         given(userRepository.existsByEmailIgnoreCase("participant@domain.com")).willReturn(true);
 
         ApiException exception = assertThrows(ApiException.class, () -> useCase.execute(request));
+
         assertEquals("resource.conflict", exception.getCode());
+        verify(userRepository, never()).save(any(UserAccount.class));
+    }
+
+    @Test
+    void should_fail_registration_when_personal_id_already_exists() {
+        RegisterUserRequest request = request();
+        request.setPersonalId("  A123B  ");
+        given(userRepository.existsByEmailIgnoreCase("participant@domain.com")).willReturn(false);
+        given(userRepository.existsByPersonalIdIgnoreCase("A123B")).willReturn(true);
+
+        ApiException exception = assertThrows(ApiException.class, () -> useCase.execute(request));
+
+        assertEquals("resource.conflict", exception.getCode());
+        verify(userRepository, never()).save(any(UserAccount.class));
+    }
+
+    @Test
+    void should_fail_registration_when_personal_id_format_is_invalid_before_repository_queries() {
+        RegisterUserRequest request = request();
+        request.setPersonalId("A-123");
+
+        ApiException exception = assertThrows(ApiException.class, () -> useCase.execute(request));
+
+        assertEquals("validation.failed", exception.getCode());
+        verifyNoInteractions(userRepository);
+    }
+
+    @Test
+    void should_keep_photo_url_null_when_not_provided() {
+        RegisterUserRequest request = request();
+        request.setPhotoUrl(null);
+        given(userRepository.existsByEmailIgnoreCase("participant@domain.com")).willReturn(false);
+        given(userRepository.existsByPersonalIdIgnoreCase("A123B")).willReturn(false);
+        given(userRepository.save(any(UserAccount.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(userMapper.toResponse(any(UserAccount.class))).willReturn(userResponse());
+        given(tokenIssuerPort.generateAccessToken(any(UserAccount.class))).willReturn("access");
+        given(tokenIssuerPort.generateRefreshToken(any(UserAccount.class))).willReturn("refresh");
+
+        useCase.execute(request);
+
+        ArgumentCaptor<UserAccount> userCaptor = ArgumentCaptor.forClass(UserAccount.class);
+        verify(userRepository).save(userCaptor.capture());
+        assertNull(userCaptor.getValue().getPhotoUrl());
     }
 
     private RegisterUserRequest request() {
@@ -98,4 +162,3 @@ class RegisterParticipantUseCaseTest {
                 .build();
     }
 }
-

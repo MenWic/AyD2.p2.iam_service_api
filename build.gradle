@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '4.0.6'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
 }
 
 group = 'ayd2.p2b'
@@ -54,6 +55,57 @@ dependencies {
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.13.0'
 }
 
+jacoco {
+    toolVersion = '0.8.13'
+}
+
+def jacocoExclusions = [
+    '**/config/**',
+    '**/*Application*',
+    '**/dto/**',
+    '**/*MapperImpl*'
+]
+
+def jacocoFilteredDirectories = { fileCollection ->
+    files(fileCollection.files.collect { fileTree(dir: it, exclude: jacocoExclusions) })
+}
+
+def skipPersistenceTests = providers.gradleProperty('skipPersistenceTests').map { it.toBoolean() }.getOrElse(false)
+
 tasks.named('test') {
     useJUnitPlatform()
+    if (skipPersistenceTests) {
+        exclude '**/integration/persistence/**'
+    }
+    finalizedBy tasks.named('jacocoTestReport')
+}
+
+tasks.named('jacocoTestReport') {
+    dependsOn tasks.named('test')
+    reports {
+        xml.required = true
+        html.required = true
+        csv.required = false
+    }
+    classDirectories.setFrom(jacocoFilteredDirectories(classDirectories))
+}
+
+tasks.named('jacocoTestCoverageVerification') {
+    dependsOn tasks.named('test')
+    violationRules {
+        rule {
+            enabled = true
+            element = 'BUNDLE'
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.85
+            }
+        }
+    }
+    classDirectories.setFrom(jacocoFilteredDirectories(classDirectories))
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('jacocoTestCoverageVerification')
 }

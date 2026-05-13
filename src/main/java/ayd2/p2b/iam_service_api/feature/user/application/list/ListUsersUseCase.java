@@ -1,7 +1,7 @@
 package ayd2.p2b.iam_service_api.feature.user.application.list;
 
-import ayd2.p2b.iam_service_api.common.exception.ApiException;
 import ayd2.p2b.iam_service_api.common.response.PageResponse;
+import ayd2.p2b.iam_service_api.feature.user.application.exception.UserExceptions;
 import ayd2.p2b.iam_service_api.feature.user.application.port.UserRepositoryPort;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.Role;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.UserAccount;
@@ -11,7 +11,6 @@ import ayd2.p2b.iam_service_api.feature.user.dto.response.UserResponse;
 import ayd2.p2b.iam_service_api.feature.user.mapper.UserMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,6 +31,13 @@ public class ListUsersUseCase {
 
     @Transactional(readOnly = true)
     public PageResponse<UserResponse> execute(RequesterContext requester, UserSearchCriteria criteria, Pageable pageable) {
+        if (pageable == null) {
+            throw UserExceptions.validationFailed("pageable is required");
+        }
+        if (requester == null || requester.getUserId() == null || requester.getRoles() == null || requester.getRoles().isEmpty()) {
+            throw UserExceptions.forbidden();
+        }
+
         Pageable effectivePageable = pageable;
         UserSearchCriteria normalizedCriteria = criteria == null ? UserSearchCriteria.builder().build() : criteria;
 
@@ -40,11 +46,10 @@ public class ListUsersUseCase {
         }
 
         if (!hasRole(requester, Role.CONGRESS_ADMIN)) {
-            throw forbidden();
+            throw UserExceptions.forbidden();
         }
-
         UserAccount requesterAccount = userRepository.findById(requester.getUserId())
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "resource.not_found", "User not found"));
+                .orElseThrow(UserExceptions::notFound);
 
         Set<UUID> requesterInstitutions = requesterAccount.getLinkedInstitutions() == null
                 ? Set.of()
@@ -63,7 +68,7 @@ public class ListUsersUseCase {
         UUID requestedInstitution = normalizedCriteria.getInstitutionId();
         if (requestedInstitution != null) {
             if (!requesterInstitutions.contains(requestedInstitution)) {
-                throw forbidden();
+                throw UserExceptions.forbidden();
             }
             return fetchPage(normalizedCriteria.toBuilder().scopedInstitutionIds(null).build(), effectivePageable);
         }
@@ -90,10 +95,6 @@ public class ListUsersUseCase {
     }
 
     private boolean hasRole(RequesterContext requester, Role role) {
-        return requester.getRoles() != null && requester.getRoles().contains(role);
-    }
-
-    private ApiException forbidden() {
-        return new ApiException(HttpStatus.FORBIDDEN, "auth.forbidden", "Forbidden");
+        return requester != null && requester.getRoles() != null && requester.getRoles().contains(role);
     }
 }

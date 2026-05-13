@@ -21,6 +21,9 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -108,14 +111,13 @@ class GetUserByIdUseCaseTest {
         UUID requesterId = UUID.randomUUID();
         UUID targetId = UUID.randomUUID();
         RequesterContext requester = new RequesterContext(requesterId, Set.of(Role.PARTICIPANT));
-        UserAccount target = user(targetId, Set.of(Role.PARTICIPANT), Set.of(UUID.randomUUID()));
-
-        when(userRepository.findById(targetId)).thenReturn(Optional.of(target));
 
         ApiException ex = assertThrows(ApiException.class, () -> useCase.execute(requester, targetId));
 
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
         assertEquals("auth.forbidden", ex.getCode());
+        verify(userRepository, never()).findById(targetId);
+        verifyNoInteractions(userMapper);
     }
 
     @Test
@@ -130,6 +132,24 @@ class GetUserByIdUseCaseTest {
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
         assertEquals("resource.not_found", ex.getCode());
+    }
+
+    @Test
+    void should_throw_validation_failed_when_target_user_id_is_null() {
+        RequesterContext requester = new RequesterContext(UUID.randomUUID(), Set.of(Role.SYSTEM_ADMIN));
+
+        ApiException ex = assertThrows(ApiException.class, () -> useCase.execute(requester, null));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        assertEquals("validation.failed", ex.getCode());
+    }
+
+    @Test
+    void should_throw_forbidden_when_requester_is_null() {
+        ApiException ex = assertThrows(ApiException.class, () -> useCase.execute(null, UUID.randomUUID()));
+
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+        assertEquals("auth.forbidden", ex.getCode());
     }
 
     private UserAccount user(UUID id, Set<Role> roles, Set<UUID> institutions) {

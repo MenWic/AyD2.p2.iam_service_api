@@ -1,13 +1,12 @@
 package ayd2.p2b.iam_service_api.feature.auth.application.logout;
 
+import ayd2.p2b.iam_service_api.feature.auth.application.exception.AuthExceptions;
 import ayd2.p2b.iam_service_api.feature.auth.dto.request.LogoutRequest;
 import ayd2.p2b.iam_service_api.feature.auth.application.port.RefreshTokenBlacklistPort;
 import ayd2.p2b.iam_service_api.feature.auth.application.port.ParsedToken;
 import ayd2.p2b.iam_service_api.feature.auth.application.port.TokenHashPort;
 import ayd2.p2b.iam_service_api.feature.auth.application.port.TokenParserPort;
-import ayd2.p2b.iam_service_api.common.exception.ApiException;
 import ayd2.p2b.iam_service_api.feature.auth.domain.model.TokenType;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,9 +31,16 @@ public class LogoutUseCase {
 
     @Transactional
     public void execute(UUID authenticatedUserId, LogoutRequest request) {
+        if (authenticatedUserId == null
+                || request == null
+                || request.getRefreshToken() == null
+                || request.getRefreshToken().isBlank()) {
+            throw AuthExceptions.invalidRefreshToken();
+        }
+
         ParsedToken parsedToken = tokenParserPort.parseToken(request.getRefreshToken(), TokenType.REFRESH);
         if (!authenticatedUserId.equals(parsedToken.getUserId())) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "auth.token_invalid", "Refresh token does not belong to user");
+            throw AuthExceptions.invalidRefreshToken();
         }
         String tokenHash = tokenHashPort.sha256(request.getRefreshToken());
         if (!blacklistPort.existsByTokenHash(tokenHash)) {

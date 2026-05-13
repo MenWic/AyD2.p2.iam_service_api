@@ -107,6 +107,27 @@ class DeactivateUserUseCaseTest {
     }
 
     @Test
+    void should_throw_forbidden_when_requester_is_null() {
+        ApiException ex = assertThrows(ApiException.class, () -> useCase.execute(null, UUID.randomUUID()));
+
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+        assertEquals("auth.forbidden", ex.getCode());
+        verify(userRepository, never()).findById(any(UUID.class));
+    }
+
+    @Test
+    void should_throw_validation_failed_when_target_user_id_is_null() {
+        ApiException ex = assertThrows(
+                ApiException.class,
+                () -> useCase.execute(new RequesterContext(UUID.randomUUID(), Set.of(Role.SYSTEM_ADMIN)), null)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        assertEquals("validation.failed", ex.getCode());
+        verify(userRepository, never()).findById(any(UUID.class));
+    }
+
+    @Test
     void should_throw_not_found_when_user_does_not_exist() {
         RequesterContext requester = new RequesterContext(UUID.randomUUID(), Set.of(Role.SYSTEM_ADMIN));
         UUID targetId = UUID.randomUUID();

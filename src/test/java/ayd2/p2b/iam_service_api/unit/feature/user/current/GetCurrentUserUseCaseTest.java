@@ -1,5 +1,6 @@
 package ayd2.p2b.iam_service_api.unit.feature.user.current;
 
+import ayd2.p2b.iam_service_api.common.exception.ApiException;
 import ayd2.p2b.iam_service_api.feature.user.application.current.GetCurrentUserUseCase;
 import ayd2.p2b.iam_service_api.feature.user.application.port.UserRepositoryPort;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.Role;
@@ -11,12 +12,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -44,6 +47,14 @@ class GetCurrentUserUseCaseTest {
         UserResponse result = useCase.execute(userId);
 
         assertEquals(userId, result.getId());
+    }
+
+    @Test
+    void should_throw_validation_failed_when_user_id_is_null() {
+        ApiException ex = assertThrows(ApiException.class, () -> useCase.execute(null));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        assertEquals("validation.failed", ex.getCode());
     }
 }
 

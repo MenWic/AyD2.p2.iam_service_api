@@ -1,11 +1,10 @@
 package ayd2.p2b.iam_service_api.feature.user.application.current;
 
+import ayd2.p2b.iam_service_api.feature.user.application.exception.UserExceptions;
 import ayd2.p2b.iam_service_api.feature.user.dto.response.UserResponse;
 import ayd2.p2b.iam_service_api.feature.user.mapper.UserMapper;
 import ayd2.p2b.iam_service_api.feature.user.application.port.UserRepositoryPort;
-import ayd2.p2b.iam_service_api.common.exception.ApiException;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.UserAccount;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,8 +23,11 @@ public class GetCurrentUserUseCase {
 
     @Transactional(readOnly = true)
     public UserResponse execute(UUID userId) {
+        if (userId == null) {
+            throw UserExceptions.validationFailed("userId is required");
+        }
         UserAccount user = userRepository.findByIdAndActiveTrue(userId)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "resource.not_found", "User not found"));
+                .orElseThrow(UserExceptions::notFound);
         return userMapper.toResponse(user);
     }
 }

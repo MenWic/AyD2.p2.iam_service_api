@@ -1,8 +1,10 @@
 package ayd2.p2b.iam_service_api.feature.auth.application.login;
 
+import ayd2.p2b.iam_service_api.common.util.TextNormalizer;
 import ayd2.p2b.iam_service_api.feature.auth.dto.response.AuthResponse;
 import ayd2.p2b.iam_service_api.feature.auth.dto.request.LoginRequest;
 import ayd2.p2b.iam_service_api.feature.user.mapper.UserMapper;
+import ayd2.p2b.iam_service_api.feature.auth.application.exception.AuthExceptions;
 import ayd2.p2b.iam_service_api.feature.auth.application.port.TokenIssuerPort;
 import ayd2.p2b.iam_service_api.feature.user.application.port.UserRepositoryPort;
 import ayd2.p2b.iam_service_api.common.exception.ApiException;
@@ -34,16 +36,28 @@ public class LoginUseCase {
 
     @Transactional(readOnly = true)
     public AuthResponse execute(LoginRequest request) {
-        UserAccount user = userRepository.findByEmailIgnoreCase(request.getEmail().trim().toLowerCase())
-                .orElseThrow(this::invalidCredentials);
+        if (request == null) {
+            throw AuthExceptions.validationFailed("Login request is required");
+        }
+
+        String normalizedEmail = TextNormalizer.normalizeEmail(request.getEmail());
+        if (normalizedEmail == null || normalizedEmail.isBlank()) {
+            throw AuthExceptions.invalidCredentials();
+        }
+        if (request.getPassword() == null || request.getPassword().isBlank()) {
+            throw AuthExceptions.invalidCredentials();
+        }
+
+        UserAccount user = userRepository.findByEmailIgnoreCase(normalizedEmail)
+                .orElseThrow(AuthExceptions::invalidCredentials);
 
         if (!Boolean.TRUE.equals(user.getActive())) {
-            throw invalidCredentials();
+            throw AuthExceptions.invalidCredentials();
         }
         if (user.getPasswordHash() == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw invalidCredentials();
+            throw AuthExceptions.invalidCredentials();
         }
-        if (user.getRoles().isEmpty()) {
+        if (user.getRoles() == null || user.getRoles().isEmpty()) {
             throw new ApiException(HttpStatus.UNPROCESSABLE_CONTENT, "domain.invariant_violated", "User has no roles");
         }
 
@@ -52,10 +66,6 @@ public class LoginUseCase {
                 .refreshToken(tokenIssuerPort.generateRefreshToken(user))
                 .user(userMapper.toResponse(user))
                 .build();
-    }
-
-    private ApiException invalidCredentials() {
-        return new ApiException(HttpStatus.UNAUTHORIZED, "auth.invalid_credentials", "Invalid credentials");
     }
 }
 

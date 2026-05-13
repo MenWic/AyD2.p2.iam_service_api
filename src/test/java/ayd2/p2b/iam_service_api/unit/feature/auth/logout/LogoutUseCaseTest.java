@@ -1,5 +1,6 @@
 package ayd2.p2b.iam_service_api.unit.feature.auth.logout;
 
+import ayd2.p2b.iam_service_api.common.exception.ApiException;
 import ayd2.p2b.iam_service_api.feature.auth.application.logout.LogoutUseCase;
 import ayd2.p2b.iam_service_api.feature.auth.application.port.ParsedToken;
 import ayd2.p2b.iam_service_api.feature.auth.application.port.RefreshTokenBlacklistPort;
@@ -19,6 +20,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -54,6 +56,48 @@ class LogoutUseCaseTest {
         verify(blacklistPort).save(hashCaptor.capture(), userCaptor.capture(), org.mockito.ArgumentMatchers.any());
         assertEquals(userId, userCaptor.getValue());
         assertEquals("hash", hashCaptor.getValue());
+    }
+
+    @Test
+    void should_fail_logout_when_authenticated_user_id_is_null() {
+        LogoutRequest request = new LogoutRequest();
+        request.setRefreshToken("refresh-token");
+
+        ApiException exception = assertThrows(ApiException.class, () -> useCase.execute(null, request));
+
+        assertEquals("auth.token_invalid", exception.getCode());
+    }
+
+    @Test
+    void should_fail_logout_when_request_is_null() {
+        ApiException exception = assertThrows(ApiException.class, () -> useCase.execute(UUID.randomUUID(), null));
+
+        assertEquals("auth.token_invalid", exception.getCode());
+    }
+
+    @Test
+    void should_fail_logout_when_refresh_token_is_blank() {
+        LogoutRequest request = new LogoutRequest();
+        request.setRefreshToken("   ");
+
+        ApiException exception = assertThrows(ApiException.class, () -> useCase.execute(UUID.randomUUID(), request));
+
+        assertEquals("auth.token_invalid", exception.getCode());
+    }
+
+    @Test
+    void should_fail_logout_when_refresh_token_does_not_belong_to_user() {
+        UUID authenticatedUserId = UUID.randomUUID();
+        UUID tokenUserId = UUID.randomUUID();
+        LogoutRequest request = new LogoutRequest();
+        request.setRefreshToken("refresh-token");
+        ParsedToken token = new ParsedToken(tokenUserId, tokenUserId.toString(), null, List.of(), TokenType.REFRESH, Instant.now().plusSeconds(600));
+
+        when(tokenParserPort.parseToken("refresh-token", TokenType.REFRESH)).thenReturn(token);
+
+        ApiException exception = assertThrows(ApiException.class, () -> useCase.execute(authenticatedUserId, request));
+
+        assertEquals("auth.token_invalid", exception.getCode());
     }
 }
 

@@ -24,6 +24,8 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -86,6 +88,51 @@ class LoginUseCaseTest {
 
         ApiException exception = assertThrows(ApiException.class, () -> useCase.execute(request));
         assertEquals("auth.invalid_credentials", exception.getCode());
+    }
+
+    @Test
+    void should_fail_with_validation_failed_when_request_is_null() {
+        ApiException exception = assertThrows(ApiException.class, () -> useCase.execute(null));
+
+        assertEquals("validation.failed", exception.getCode());
+    }
+
+    @Test
+    void should_fail_with_invalid_credentials_when_email_is_blank() {
+        LoginRequest request = loginRequest("MyStrongPassword123");
+        request.setEmail("   ");
+
+        ApiException exception = assertThrows(ApiException.class, () -> useCase.execute(request));
+
+        assertEquals("auth.invalid_credentials", exception.getCode());
+        verify(userRepository, never()).findByEmailIgnoreCase("participant@domain.com");
+    }
+
+    @Test
+    void should_fail_with_invalid_credentials_when_password_is_blank() {
+        LoginRequest request = loginRequest("   ");
+
+        ApiException exception = assertThrows(ApiException.class, () -> useCase.execute(request));
+
+        assertEquals("auth.invalid_credentials", exception.getCode());
+        verify(userRepository, never()).findByEmailIgnoreCase("participant@domain.com");
+    }
+
+    @Test
+    void should_throw_domain_invariant_when_user_roles_are_null_or_empty() {
+        LoginRequest request = loginRequest("MyStrongPassword123");
+        UserAccount userWithNullRoles = activeUser().toBuilder().roles(null).build();
+        UserAccount userWithEmptyRoles = activeUser().toBuilder().roles(Set.of()).build();
+
+        when(userRepository.findByEmailIgnoreCase("participant@domain.com")).thenReturn(Optional.of(userWithNullRoles));
+
+        ApiException nullRolesException = assertThrows(ApiException.class, () -> useCase.execute(request));
+        assertEquals("domain.invariant_violated", nullRolesException.getCode());
+
+        when(userRepository.findByEmailIgnoreCase("participant@domain.com")).thenReturn(Optional.of(userWithEmptyRoles));
+
+        ApiException emptyRolesException = assertThrows(ApiException.class, () -> useCase.execute(request));
+        assertEquals("domain.invariant_violated", emptyRolesException.getCode());
     }
 
     private LoginRequest loginRequest(String password) {

@@ -1,13 +1,12 @@
 package ayd2.p2b.iam_service_api.feature.user.application.get;
 
-import ayd2.p2b.iam_service_api.common.exception.ApiException;
+import ayd2.p2b.iam_service_api.feature.user.application.exception.UserExceptions;
 import ayd2.p2b.iam_service_api.feature.user.application.port.UserRepositoryPort;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.Role;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.UserAccount;
 import ayd2.p2b.iam_service_api.feature.user.dto.internal.RequesterContext;
 import ayd2.p2b.iam_service_api.feature.user.dto.response.UserResponse;
 import ayd2.p2b.iam_service_api.feature.user.mapper.UserMapper;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,19 +26,26 @@ public class GetUserByIdUseCase {
 
     @Transactional(readOnly = true)
     public UserResponse execute(RequesterContext requester, UUID targetUserId) {
-        UserAccount targetUser = userRepository.findById(targetUserId)
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "resource.not_found", "User not found"));
+        if (targetUserId == null) {
+            throw UserExceptions.validationFailed("targetUserId is required");
+        }
+        requireValidRequester(requester);
 
-        if (hasRole(requester, Role.SYSTEM_ADMIN) || requester.getUserId().equals(targetUserId)) {
+        if (requester.getUserId().equals(targetUserId) || hasRole(requester, Role.SYSTEM_ADMIN)) {
+            UserAccount targetUser = userRepository.findById(targetUserId)
+                    .orElseThrow(UserExceptions::notFound);
             return userMapper.toResponse(targetUser);
         }
 
         if (!hasRole(requester, Role.CONGRESS_ADMIN)) {
-            throw forbidden();
+            throw UserExceptions.forbidden();
         }
 
+        UserAccount targetUser = userRepository.findById(targetUserId)
+                .orElseThrow(UserExceptions::notFound);
+
         UserAccount requesterAccount = userRepository.findById(requester.getUserId())
-                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "resource.not_found", "User not found"));
+                .orElseThrow(UserExceptions::notFound);
 
         Set<UUID> requesterInstitutions = requesterAccount.getLinkedInstitutions() == null
                 ? Set.of()
@@ -49,22 +55,24 @@ public class GetUserByIdUseCase {
                 : targetUser.getLinkedInstitutions();
 
         if (targetInstitutions.isEmpty()) {
-            throw forbidden();
+            throw UserExceptions.forbidden();
         }
 
         boolean hasSharedInstitution = requesterInstitutions.stream().anyMatch(targetInstitutions::contains);
         if (!hasSharedInstitution) {
-            throw forbidden();
+            throw UserExceptions.forbidden();
         }
 
         return userMapper.toResponse(targetUser);
     }
 
     private boolean hasRole(RequesterContext requester, Role role) {
-        return requester.getRoles() != null && requester.getRoles().contains(role);
+        return requester != null && requester.getRoles() != null && requester.getRoles().contains(role);
     }
 
-    private ApiException forbidden() {
-        return new ApiException(HttpStatus.FORBIDDEN, "auth.forbidden", "Forbidden");
+    private void requireValidRequester(RequesterContext requester) {
+        if (requester == null || requester.getUserId() == null || requester.getRoles() == null || requester.getRoles().isEmpty()) {
+            throw UserExceptions.forbidden();
+        }
     }
 }

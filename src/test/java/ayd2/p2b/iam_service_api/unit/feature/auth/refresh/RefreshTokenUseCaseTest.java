@@ -79,6 +79,23 @@ class RefreshTokenUseCaseTest {
         assertEquals("auth.token_invalid", exception.getCode());
     }
 
+    @Test
+    void should_fail_refresh_when_request_is_null() {
+        ApiException exception = assertThrows(ApiException.class, () -> useCase.execute(null));
+
+        assertEquals("auth.token_invalid", exception.getCode());
+    }
+
+    @Test
+    void should_fail_refresh_when_refresh_token_is_blank() {
+        RefreshRequest request = new RefreshRequest();
+        request.setRefreshToken("   ");
+
+        ApiException exception = assertThrows(ApiException.class, () -> useCase.execute(request));
+
+        assertEquals("auth.token_invalid", exception.getCode());
+    }
+
     private UserAccount activeUser(UUID userId) {
         return UserAccount.builder()
                 .id(userId)

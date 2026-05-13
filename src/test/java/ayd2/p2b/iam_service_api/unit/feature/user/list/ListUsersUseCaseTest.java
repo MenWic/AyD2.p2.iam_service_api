@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
@@ -200,6 +201,62 @@ class ListUsersUseCaseTest {
 
         assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
         assertEquals("auth.forbidden", ex.getCode());
+    }
+
+    @Test
+    void should_throw_forbidden_when_requester_is_null() {
+        ApiException ex = assertThrows(
+                ApiException.class,
+                () -> useCase.execute(null, UserSearchCriteria.builder().build(), PageRequest.of(0, 20))
+        );
+
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+        assertEquals("auth.forbidden", ex.getCode());
+    }
+
+    @Test
+    void should_throw_validation_failed_when_pageable_is_null() {
+        RequesterContext requester = new RequesterContext(UUID.randomUUID(), Set.of(Role.SYSTEM_ADMIN));
+
+        ApiException ex = assertThrows(
+                ApiException.class,
+                () -> useCase.execute(requester, UserSearchCriteria.builder().build(), null)
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+        assertEquals("validation.failed", ex.getCode());
+    }
+
+    @Test
+    void should_throw_forbidden_when_congress_admin_has_null_user_id() {
+        RequesterContext requester = new RequesterContext(null, Set.of(Role.CONGRESS_ADMIN));
+
+        ApiException ex = assertThrows(
+                ApiException.class,
+                () -> useCase.execute(requester, UserSearchCriteria.builder().build(), PageRequest.of(0, 20))
+        );
+
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+        assertEquals("auth.forbidden", ex.getCode());
+        verify(userRepository, never()).findById(any());
+    }
+
+    @Test
+    void should_use_safe_default_when_criteria_is_null() {
+        RequesterContext requester = new RequesterContext(UUID.randomUUID(), Set.of(Role.SYSTEM_ADMIN));
+        Pageable pageable = PageRequest.of(0, 20);
+
+        when(userRepository.findAll(any(UserSearchCriteria.class), eq(pageable)))
+                .thenReturn(new PageImpl<>(List.of(), pageable, 0));
+
+        useCase.execute(requester, null, pageable);
+
+        ArgumentCaptor<UserSearchCriteria> captor = ArgumentCaptor.forClass(UserSearchCriteria.class);
+        verify(userRepository).findAll(captor.capture(), eq(pageable));
+        assertNull(captor.getValue().getRole());
+        assertNull(captor.getValue().getActive());
+        assertNull(captor.getValue().getInstitutionId());
+        assertNull(captor.getValue().getSearch());
     }
 
     private UserAccount user(UUID id, Set<Role> roles, Set<UUID> institutions) {
