@@ -3,6 +3,7 @@ package ayd2.p2b.iam_service_api.feature.user.controller;
 import ayd2.p2b.iam_service_api.common.exception.ApiException;
 import ayd2.p2b.iam_service_api.common.response.ApiResponse;
 import ayd2.p2b.iam_service_api.common.response.PageResponse;
+import ayd2.p2b.iam_service_api.common.util.PrincipalResolver;
 import ayd2.p2b.iam_service_api.core.openapi.OpenApiExamples;
 import ayd2.p2b.iam_service_api.feature.auth.application.register.RegisterParticipantUseCase;
 import ayd2.p2b.iam_service_api.feature.auth.dto.response.AuthResponse;
@@ -51,7 +52,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.net.URI;
 import java.util.UUID;
 
 @RestController
@@ -127,7 +130,12 @@ public class UserController {
             )
             @Valid @RequestBody RegisterUserRequest request
     ) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.of(registerParticipantUseCase.execute(request)));
+        AuthResponse response = registerParticipantUseCase.execute(request);
+        URI location = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/users/{id}")
+                .buildAndExpand(response.getUser().getId())
+                .toUri();
+        return ResponseEntity.created(location).body(ApiResponse.of(response));
     }
 
     @GetMapping("/me")
@@ -344,8 +352,12 @@ public class UserController {
             Authentication authentication
     ) {
         RequesterContext requester = toRequesterContext(authentication);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.of(createSystemAdminUseCase.execute(requester, request)));
+        UserResponse response = createSystemAdminUseCase.execute(requester, request);
+        URI location = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/users/{id}")
+                .buildAndExpand(response.getId())
+                .toUri();
+        return ResponseEntity.created(location).body(ApiResponse.of(response));
     }
 
     @PostMapping("/congress-admins")
@@ -375,8 +387,12 @@ public class UserController {
             Authentication authentication
     ) {
         RequesterContext requester = toRequesterContext(authentication);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.of(createCongressAdminUseCase.execute(requester, request)));
+        UserResponse response = createCongressAdminUseCase.execute(requester, request);
+        URI location = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/users/{id}")
+                .buildAndExpand(response.getId())
+                .toUri();
+        return ResponseEntity.created(location).body(ApiResponse.of(response));
     }
 
     @PostMapping("/guest-speakers")
@@ -406,8 +422,12 @@ public class UserController {
             Authentication authentication
     ) {
         RequesterContext requester = toRequesterContext(authentication);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.of(createGuestSpeakerUseCase.execute(requester, request)));
+        UserResponse response = createGuestSpeakerUseCase.execute(requester, request);
+        URI location = ServletUriComponentsBuilder.fromCurrentContextPath()
+                .path("/users/{id}")
+                .buildAndExpand(response.getId())
+                .toUri();
+        return ResponseEntity.created(location).body(ApiResponse.of(response));
     }
 
     private int normalizeSize(Integer size) {

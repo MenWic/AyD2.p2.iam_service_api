@@ -74,7 +74,7 @@ public class UserEntity {
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
-    @Column(name = "role", nullable = false, columnDefinition = "user_role")
+    @Column(name = "role", nullable = false, length = 50)
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private Set<Role> roles = new HashSet<>();
@@ -103,4 +103,3 @@ public class UserEntity {
         updatedAt = Instant.now();
     }
 }
-

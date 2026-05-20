@@ -116,3 +116,7 @@ tasks.named('jacocoTestCoverageVerification') {
 tasks.named('check') {
     dependsOn tasks.named('jacocoTestCoverageVerification')
 }
+
+tasks.register('verify') {
+    dependsOn tasks.named('jacocoTestCoverageVerification')
+}

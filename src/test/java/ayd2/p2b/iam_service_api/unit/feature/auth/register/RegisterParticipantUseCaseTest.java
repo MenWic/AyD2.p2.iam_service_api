@@ -10,14 +10,13 @@ import ayd2.p2b.iam_service_api.feature.user.domain.model.UserAccount;
 import ayd2.p2b.iam_service_api.feature.user.dto.request.RegisterUserRequest;
 import ayd2.p2b.iam_service_api.feature.user.dto.response.UserResponse;
 import ayd2.p2b.iam_service_api.feature.user.mapper.UserMapper;
+import ayd2.p2b.iam_service_api.feature.auth.application.port.PasswordHasherPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Set;
 import java.util.UUID;
@@ -39,13 +38,13 @@ class RegisterParticipantUseCaseTest {
     @Mock private UserRepositoryPort userRepository;
     @Mock private UserMapper userMapper;
     @Mock private TokenIssuerPort tokenIssuerPort;
+    @Mock private PasswordHasherPort passwordHasher;
 
     private RegisterParticipantUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        useCase = new RegisterParticipantUseCase(userRepository, userMapper, passwordEncoder, tokenIssuerPort);
+        useCase = new RegisterParticipantUseCase(userRepository, userMapper, passwordHasher, tokenIssuerPort);
     }
 
     @Test
