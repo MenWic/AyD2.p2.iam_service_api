@@ -25,6 +25,8 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run tests
+        env:
+          TESTCONTAINERS_RYUK_DISABLED: "true"
         run: ./gradlew test --no-daemon
 
       - name: Build JAR
