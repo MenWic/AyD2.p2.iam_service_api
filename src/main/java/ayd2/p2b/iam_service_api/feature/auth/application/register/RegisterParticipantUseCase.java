@@ -4,6 +4,7 @@ import ayd2.p2b.iam_service_api.common.util.TextNormalizer;
 import ayd2.p2b.iam_service_api.common.validation.PasswordRules;
 import ayd2.p2b.iam_service_api.common.validation.PersonalIdValidator;
 import ayd2.p2b.iam_service_api.feature.auth.application.exception.AuthExceptions;
+import ayd2.p2b.iam_service_api.core.security.password.PasswordHasherPort;
 import ayd2.p2b.iam_service_api.feature.auth.dto.response.AuthResponse;
 import ayd2.p2b.iam_service_api.feature.user.dto.request.RegisterUserRequest;
 import ayd2.p2b.iam_service_api.feature.user.mapper.UserMapper;
@@ -12,7 +13,6 @@ import ayd2.p2b.iam_service_api.feature.user.application.port.UserRepositoryPort
 import ayd2.p2b.iam_service_api.feature.user.application.exception.UserExceptions;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.Role;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.UserAccount;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,18 +23,17 @@ public class RegisterParticipantUseCase {
 
     private final UserRepositoryPort userRepository;
     private final UserMapper userMapper;
-    private final PasswordEncoder passwordEncoder;
+    private final PasswordHasherPort passwordHasher;
     private final TokenIssuerPort tokenIssuerPort;
 
     public RegisterParticipantUseCase(
             UserRepositoryPort userRepository,
             UserMapper userMapper,
-            PasswordEncoder passwordEncoder,
-            TokenIssuerPort tokenIssuerPort
-    ) {
+            PasswordHasherPort passwordHasher,
+            TokenIssuerPort tokenIssuerPort) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
-        this.passwordEncoder = passwordEncoder;
+        this.passwordHasher = passwordHasher;
         this.tokenIssuerPort = tokenIssuerPort;
     }
 
@@ -64,7 +63,7 @@ public class RegisterParticipantUseCase {
 
         UserAccount saved = userRepository.save(UserAccount.builder()
                 .email(normalizedEmail)
-                .passwordHash(passwordEncoder.encode(normalizedPassword))
+                .passwordHash(passwordHasher.encode(normalizedPassword))
                 .fullName(TextNormalizer.trimRequired(request.getFullName()))
                 .organization(TextNormalizer.trimRequired(request.getOrganization()))
                 .phone(TextNormalizer.trimRequired(request.getPhone()))
@@ -81,4 +80,3 @@ public class RegisterParticipantUseCase {
                 .build();
     }
 }
-

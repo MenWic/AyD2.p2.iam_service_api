@@ -33,23 +33,32 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class RefreshTokenUseCaseTest {
 
-    @Mock private UserRepositoryPort userRepository;
-    @Mock private RefreshTokenBlacklistPort blacklistPort;
-    @Mock private TokenIssuerPort tokenIssuerPort;
-    @Mock private TokenParserPort tokenParserPort;
-    @Mock private TokenHashPort tokenHashPort;
+    @Mock
+    private UserRepositoryPort userRepository;
+    @Mock
+    private RefreshTokenBlacklistPort blacklistPort;
+    @Mock
+    private TokenIssuerPort tokenIssuerPort;
+    @Mock
+    private TokenParserPort tokenParserPort;
+    @Mock
+    private TokenHashPort tokenHashPort;
 
     private RefreshTokenUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new RefreshTokenUseCase(userRepository, blacklistPort, tokenIssuerPort, tokenParserPort, tokenHashPort);
+        useCase = new RefreshTokenUseCase(userRepository, blacklistPort, tokenIssuerPort, tokenParserPort,
+                tokenHashPort);
     }
 
     @Test
     void should_create_new_access_token_when_refresh_token_is_valid() {
         UUID userId = UUID.randomUUID();
-        ParsedToken token = new ParsedToken(userId, userId.toString(), null, List.of(), TokenType.REFRESH, Instant.now().plusSeconds(300));
+        ParsedToken token = ParsedToken.builder()
+                .userId(userId).subject(userId.toString()).email(null)
+                .roles(List.of()).tokenType(TokenType.REFRESH).expiresAt(Instant.now().plusSeconds(300))
+                .build();
         RefreshRequest request = new RefreshRequest();
         request.setRefreshToken("refresh-token");
 
@@ -67,7 +76,10 @@ class RefreshTokenUseCaseTest {
     @Test
     void should_fail_refresh_when_refresh_token_is_blacklisted() {
         UUID userId = UUID.randomUUID();
-        ParsedToken token = new ParsedToken(userId, userId.toString(), null, List.of(), TokenType.REFRESH, Instant.now().plusSeconds(300));
+        ParsedToken token = ParsedToken.builder()
+                .userId(userId).subject(userId.toString()).email(null)
+                .roles(List.of()).tokenType(TokenType.REFRESH).expiresAt(Instant.now().plusSeconds(300))
+                .build();
         RefreshRequest request = new RefreshRequest();
         request.setRefreshToken("refresh-token");
 
@@ -105,4 +117,3 @@ class RefreshTokenUseCaseTest {
                 .build();
     }
 }
-

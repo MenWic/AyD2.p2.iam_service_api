@@ -27,9 +27,12 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class LogoutUseCaseTest {
 
-    @Mock private RefreshTokenBlacklistPort blacklistPort;
-    @Mock private TokenParserPort tokenParserPort;
-    @Mock private TokenHashPort tokenHashPort;
+    @Mock
+    private RefreshTokenBlacklistPort blacklistPort;
+    @Mock
+    private TokenParserPort tokenParserPort;
+    @Mock
+    private TokenHashPort tokenHashPort;
 
     private LogoutUseCase useCase;
 
@@ -43,7 +46,10 @@ class LogoutUseCaseTest {
         UUID userId = UUID.randomUUID();
         LogoutRequest request = new LogoutRequest();
         request.setRefreshToken("refresh-token");
-        ParsedToken token = new ParsedToken(userId, userId.toString(), null, List.of(), TokenType.REFRESH, Instant.now().plusSeconds(600));
+        ParsedToken token = ParsedToken.builder()
+                .userId(userId).subject(userId.toString()).email(null)
+                .roles(List.of()).tokenType(TokenType.REFRESH).expiresAt(Instant.now().plusSeconds(600))
+                .build();
 
         when(tokenParserPort.parseToken("refresh-token", TokenType.REFRESH)).thenReturn(token);
         when(tokenHashPort.sha256("refresh-token")).thenReturn("hash");
@@ -91,7 +97,10 @@ class LogoutUseCaseTest {
         UUID tokenUserId = UUID.randomUUID();
         LogoutRequest request = new LogoutRequest();
         request.setRefreshToken("refresh-token");
-        ParsedToken token = new ParsedToken(tokenUserId, tokenUserId.toString(), null, List.of(), TokenType.REFRESH, Instant.now().plusSeconds(600));
+        ParsedToken token = ParsedToken.builder()
+                .userId(tokenUserId).subject(tokenUserId.toString()).email(null)
+                .roles(List.of()).tokenType(TokenType.REFRESH).expiresAt(Instant.now().plusSeconds(600))
+                .build();
 
         when(tokenParserPort.parseToken("refresh-token", TokenType.REFRESH)).thenReturn(token);
 
@@ -100,4 +109,3 @@ class LogoutUseCaseTest {
         assertEquals("auth.token_invalid", exception.getCode());
     }
 }
-

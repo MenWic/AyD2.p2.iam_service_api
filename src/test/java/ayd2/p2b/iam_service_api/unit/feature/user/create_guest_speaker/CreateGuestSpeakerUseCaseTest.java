@@ -9,6 +9,7 @@ import ayd2.p2b.iam_service_api.feature.user.dto.internal.RequesterContext;
 import ayd2.p2b.iam_service_api.feature.user.dto.request.CreateGuestSpeakerRequest;
 import ayd2.p2b.iam_service_api.feature.user.dto.response.UserResponse;
 import ayd2.p2b.iam_service_api.feature.user.mapper.UserMapper;
+import ayd2.p2b.iam_service_api.core.security.password.PasswordHasherPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,7 +17,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Set;
 import java.util.UUID;
@@ -34,15 +34,18 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class CreateGuestSpeakerUseCaseTest {
 
-    @Mock private UserRepositoryPort userRepository;
-    @Mock private UserMapper userMapper;
-    @Mock private PasswordEncoder passwordEncoder;
+    @Mock
+    private UserRepositoryPort userRepository;
+    @Mock
+    private UserMapper userMapper;
+    @Mock
+    private PasswordHasherPort passwordHasher;
 
     private CreateGuestSpeakerUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        useCase = new CreateGuestSpeakerUseCase(userRepository, userMapper, passwordEncoder);
+        useCase = new CreateGuestSpeakerUseCase(userRepository, userMapper, passwordHasher);
     }
 
     @Test
@@ -52,7 +55,7 @@ class CreateGuestSpeakerUseCaseTest {
 
         when(userRepository.existsByEmailIgnoreCase(any())).thenReturn(false);
         when(userRepository.existsByPersonalIdIgnoreCase(any())).thenReturn(false);
-        when(passwordEncoder.encode("Password123")).thenReturn("hashed");
+        when(passwordHasher.encode("Password123")).thenReturn("hashed");
         when(userRepository.save(any(UserAccount.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(userMapper.toResponse(any(UserAccount.class))).thenReturn(response());
 
@@ -79,7 +82,7 @@ class CreateGuestSpeakerUseCaseTest {
         ArgumentCaptor<UserAccount> captor = ArgumentCaptor.forClass(UserAccount.class);
         verify(userRepository).save(captor.capture());
         assertNull(captor.getValue().getPasswordHash());
-        verify(passwordEncoder, never()).encode(any());
+        verify(passwordHasher, never()).encode(any());
     }
 
     @Test
@@ -90,13 +93,13 @@ class CreateGuestSpeakerUseCaseTest {
 
         when(userRepository.existsByEmailIgnoreCase(any())).thenReturn(false);
         when(userRepository.existsByPersonalIdIgnoreCase(any())).thenReturn(false);
-        when(passwordEncoder.encode("Password123")).thenReturn("hashed");
+        when(passwordHasher.encode("Password123")).thenReturn("hashed");
         when(userRepository.save(any(UserAccount.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(userMapper.toResponse(any(UserAccount.class))).thenReturn(response());
 
         useCase.execute(requester, request);
 
-        verify(passwordEncoder).encode("Password123");
+        verify(passwordHasher).encode("Password123");
     }
 
     @Test
@@ -165,7 +168,7 @@ class CreateGuestSpeakerUseCaseTest {
 
         when(userRepository.existsByEmailIgnoreCase(any())).thenReturn(false);
         when(userRepository.existsByPersonalIdIgnoreCase(any())).thenReturn(false);
-        when(passwordEncoder.encode(any())).thenReturn("hashed");
+        when(passwordHasher.encode(any())).thenReturn("hashed");
         when(userRepository.save(any(UserAccount.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(userMapper.toResponse(any(UserAccount.class))).thenReturn(response());
 
@@ -187,7 +190,7 @@ class CreateGuestSpeakerUseCaseTest {
 
         when(userRepository.existsByEmailIgnoreCase(any())).thenReturn(false);
         when(userRepository.existsByPersonalIdIgnoreCase(any())).thenReturn(false);
-        when(passwordEncoder.encode(any())).thenReturn("hashed");
+        when(passwordHasher.encode(any())).thenReturn("hashed");
         when(userRepository.save(any(UserAccount.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(userMapper.toResponse(any(UserAccount.class))).thenReturn(response());
 
@@ -213,7 +216,7 @@ class CreateGuestSpeakerUseCaseTest {
         ArgumentCaptor<UserAccount> captor = ArgumentCaptor.forClass(UserAccount.class);
         verify(userRepository).save(captor.capture());
         assertNull(captor.getValue().getPasswordHash());
-        verify(passwordEncoder, never()).encode(any());
+        verify(passwordHasher, never()).encode(any());
     }
 
     @Test
