@@ -10,11 +10,13 @@ import ayd2.p2b.iam_service_api.feature.auth.application.port.TokenIssuerPort;
 import ayd2.p2b.iam_service_api.feature.user.application.port.UserRepositoryPort;
 import ayd2.p2b.iam_service_api.common.exception.ApiException;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.UserAccount;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
+@RequiredArgsConstructor
 public class LoginUseCase {
 
     private final UserRepositoryPort userRepository;
@@ -22,16 +24,6 @@ public class LoginUseCase {
     private final PasswordHasherPort passwordHasher;
     private final TokenIssuerPort tokenIssuerPort;
 
-    public LoginUseCase(
-            UserRepositoryPort userRepository,
-            UserMapper userMapper,
-            PasswordHasherPort passwordHasher,
-            TokenIssuerPort tokenIssuerPort) {
-        this.userRepository = userRepository;
-        this.userMapper = userMapper;
-        this.passwordHasher = passwordHasher;
-        this.tokenIssuerPort = tokenIssuerPort;
-    }
 
     @Transactional(readOnly = true)
     public AuthResponse execute(LoginRequest request) {

@@ -5,18 +5,16 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import tools.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 
 import java.io.IOException;
 import java.util.Map;
 
 @Component
+@RequiredArgsConstructor
 public class RestAuthenticationEntryPoint implements org.springframework.security.web.AuthenticationEntryPoint {
 
     private final ObjectMapper objectMapper;
-
-    public RestAuthenticationEntryPoint(ObjectMapper objectMapper) {
-        this.objectMapper = objectMapper;
-    }
 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, org.springframework.security.core.AuthenticationException authException)
@@ -31,4 +29,3 @@ public class RestAuthenticationEntryPoint implements org.springframework.securit
         ));
     }
 }
-

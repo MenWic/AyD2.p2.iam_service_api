@@ -11,6 +11,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor;
 
 import java.util.HashSet;
 import java.util.Optional;
@@ -18,13 +19,10 @@ import java.util.Set;
 import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class JpaUserRepositoryAdapter implements UserRepositoryPort {
 
     private final UserRepository userRepository;
-
-    public JpaUserRepositoryAdapter(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
 
     @Override
     public Optional<UserAccount> findByEmailIgnoreCase(String email) {
@@ -111,4 +109,3 @@ public class JpaUserRepositoryAdapter implements UserRepositoryPort {
                 .build();
     }
 }
-

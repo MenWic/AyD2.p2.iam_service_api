@@ -4,18 +4,16 @@ import ayd2.p2b.iam_service_api.feature.auth.application.port.RefreshTokenBlackl
 import ayd2.p2b.iam_service_api.feature.auth.infrastructure.persistence.entity.RefreshTokenBlacklistEntity;
 import ayd2.p2b.iam_service_api.feature.auth.infrastructure.persistence.repository.RefreshTokenBlacklistRepository;
 import org.springframework.stereotype.Component;
+import lombok.RequiredArgsConstructor;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class JpaRefreshTokenBlacklistAdapter implements RefreshTokenBlacklistPort {
 
     private final RefreshTokenBlacklistRepository repository;
-
-    public JpaRefreshTokenBlacklistAdapter(RefreshTokenBlacklistRepository repository) {
-        this.repository = repository;
-    }
 
     @Override
     public boolean existsByTokenHash(String tokenHash) {
@@ -32,4 +30,3 @@ public class JpaRefreshTokenBlacklistAdapter implements RefreshTokenBlacklistPor
         repository.save(entity);
     }
 }
-

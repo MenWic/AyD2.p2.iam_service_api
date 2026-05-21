@@ -7,27 +7,20 @@ import ayd2.p2b.iam_service_api.feature.auth.application.port.ParsedToken;
 import ayd2.p2b.iam_service_api.feature.auth.application.port.TokenHashPort;
 import ayd2.p2b.iam_service_api.feature.auth.application.port.TokenParserPort;
 import ayd2.p2b.iam_service_api.feature.auth.domain.model.TokenType;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class LogoutUseCase {
 
     private final RefreshTokenBlacklistPort blacklistPort;
     private final TokenParserPort tokenParserPort;
     private final TokenHashPort tokenHashPort;
 
-    public LogoutUseCase(
-            RefreshTokenBlacklistPort blacklistPort,
-            TokenParserPort tokenParserPort,
-            TokenHashPort tokenHashPort
-    ) {
-        this.blacklistPort = blacklistPort;
-        this.tokenParserPort = tokenParserPort;
-        this.tokenHashPort = tokenHashPort;
-    }
 
     @Transactional
     public void execute(UUID authenticatedUserId, LogoutRequest request) {
