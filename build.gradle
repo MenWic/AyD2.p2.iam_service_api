@@ -54,6 +54,7 @@ dependencies {
     implementation 'org.mapstruct:mapstruct:1.6.3'
     annotationProcessor 'org.mapstruct:mapstruct-processor:1.6.3'
     annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+    testImplementation 'org.springframework.boot:spring-boot-testcontainers'
     testImplementation 'org.testcontainers:junit-jupiter:1.21.4'
     testImplementation 'org.testcontainers:postgresql:1.21.4'
 
@@ -83,6 +84,10 @@ tasks.named('test') {
     useJUnitPlatform()
     if (skipPersistenceTests) {
         exclude '**/integration/persistence/**'
+    }
+    testLogging {
+        events 'passed', 'failed', 'skipped'
+        showStandardStreams = false
     }
     finalizedBy tasks.named('jacocoTestReport')
 }
