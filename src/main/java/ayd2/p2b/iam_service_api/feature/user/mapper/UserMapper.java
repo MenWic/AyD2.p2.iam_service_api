@@ -8,12 +8,14 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Named;
 
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
     @Mapping(target = "roles", source = "roles", qualifiedByName = "mapRoles")
+    @Mapping(target = "linkedInstitutions", source = "linkedInstitutions", qualifiedByName = "mapLinkedInstitutions")
     UserResponse toResponse(UserAccount account);
 
     @Named("mapRoles")
@@ -23,5 +25,9 @@ public interface UserMapper {
         }
         return roles.stream().map(Role::name).collect(Collectors.toSet());
     }
-}
 
+    @Named("mapLinkedInstitutions")
+    default Set<UUID> mapLinkedInstitutions(Set<UUID> ids) {
+        return ids == null ? Set.of() : Set.copyOf(ids);
+    }
+}

@@ -30,5 +30,7 @@ public class UserResponse {
     private Boolean active;
     @Schema(description = "Assigned roles", example = "[\"PARTICIPANT\"]")
     private Set<String> roles;
+    @Schema(description = "Linked institution IDs (only populated for CONGRESS_ADMIN)")
+    private Set<UUID> linkedInstitutions;
 }
 

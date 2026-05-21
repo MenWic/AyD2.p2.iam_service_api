@@ -10,13 +10,12 @@ import ayd2.p2b.iam_service_api.feature.user.domain.model.Role;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.UserAccount;
 import ayd2.p2b.iam_service_api.feature.user.dto.response.UserResponse;
 import ayd2.p2b.iam_service_api.feature.user.mapper.UserMapper;
+import ayd2.p2b.iam_service_api.core.security.password.PasswordHasherPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Optional;
 import java.util.Set;
@@ -31,17 +30,20 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class LoginUseCaseTest {
 
-    @Mock private UserRepositoryPort userRepository;
-    @Mock private UserMapper userMapper;
-    @Mock private TokenIssuerPort tokenIssuerPort;
+    @Mock
+    private UserRepositoryPort userRepository;
+    @Mock
+    private UserMapper userMapper;
+    @Mock
+    private TokenIssuerPort tokenIssuerPort;
+    @Mock
+    private PasswordHasherPort passwordHasher;
 
-    private PasswordEncoder passwordEncoder;
     private LoginUseCase useCase;
 
     @BeforeEach
     void setUp() {
-        passwordEncoder = new BCryptPasswordEncoder();
-        useCase = new LoginUseCase(userRepository, userMapper, passwordEncoder, tokenIssuerPort);
+        useCase = new LoginUseCase(userRepository, userMapper, passwordHasher, tokenIssuerPort);
     }
 
     @Test
@@ -49,6 +51,7 @@ class LoginUseCaseTest {
         LoginRequest request = loginRequest("MyStrongPassword123");
         UserAccount user = activeUser();
         when(userRepository.findByEmailIgnoreCase("participant@domain.com")).thenReturn(Optional.of(user));
+        when(passwordHasher.matches("MyStrongPassword123", "hashed_password")).thenReturn(true);
         when(userMapper.toResponse(user)).thenReturn(userResponse());
         when(tokenIssuerPort.generateAccessToken(user)).thenReturn("access");
         when(tokenIssuerPort.generateRefreshToken(user)).thenReturn("refresh");
@@ -124,12 +127,14 @@ class LoginUseCaseTest {
         UserAccount userWithNullRoles = activeUser().toBuilder().roles(null).build();
         UserAccount userWithEmptyRoles = activeUser().toBuilder().roles(Set.of()).build();
 
+        when(passwordHasher.matches("MyStrongPassword123", "hashed_password")).thenReturn(true);
         when(userRepository.findByEmailIgnoreCase("participant@domain.com")).thenReturn(Optional.of(userWithNullRoles));
 
         ApiException nullRolesException = assertThrows(ApiException.class, () -> useCase.execute(request));
         assertEquals("domain.invariant_violated", nullRolesException.getCode());
 
-        when(userRepository.findByEmailIgnoreCase("participant@domain.com")).thenReturn(Optional.of(userWithEmptyRoles));
+        when(userRepository.findByEmailIgnoreCase("participant@domain.com"))
+                .thenReturn(Optional.of(userWithEmptyRoles));
 
         ApiException emptyRolesException = assertThrows(ApiException.class, () -> useCase.execute(request));
         assertEquals("domain.invariant_violated", emptyRolesException.getCode());
@@ -146,7 +151,7 @@ class LoginUseCaseTest {
         return UserAccount.builder()
                 .id(UUID.randomUUID())
                 .email("participant@domain.com")
-                .passwordHash(passwordEncoder.encode("MyStrongPassword123"))
+                .passwordHash("hashed_password")
                 .fullName("Participant User")
                 .organization("Code n Bugs")
                 .phone("555-0101")
@@ -169,4 +174,3 @@ class LoginUseCaseTest {
                 .build();
     }
 }
-

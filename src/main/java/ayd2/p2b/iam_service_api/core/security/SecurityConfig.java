@@ -23,8 +23,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(
             HttpSecurity http,
             JwtAuthenticationFilter jwtAuthenticationFilter,
-            RestAuthenticationEntryPoint authenticationEntryPoint
-    ) {
+            RestAuthenticationEntryPoint authenticationEntryPoint) {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -34,13 +33,16 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .requestMatchers(HttpMethod.POST, "/auth/logout").authenticated()
-                        .requestMatchers(HttpMethod.POST, "/users/system-admins", "/users/congress-admins", "/users/guest-speakers").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/users", "/users/me", "/users/*").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/users/system-admins", "/users/congress-admins")
+                        .hasRole("SYSTEM_ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/users/guest-speakers").hasRole("CONGRESS_ADMIN")
+                        .requestMatchers(HttpMethod.PATCH, "/users/*/activate", "/users/*/deactivate")
+                        .hasRole("SYSTEM_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/users").hasAnyRole("SYSTEM_ADMIN", "CONGRESS_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/users/*/can-be-committee").hasRole("CONGRESS_ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/users/me", "/users/*").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/users/*").authenticated()
-                        .requestMatchers(HttpMethod.GET, "/users/*/can-be-committee").authenticated()
-                        .requestMatchers(HttpMethod.PATCH, "/users/*/activate", "/users/*/deactivate").authenticated()
-                        .anyRequest().denyAll()
-                )
+                        .anyRequest().denyAll())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }

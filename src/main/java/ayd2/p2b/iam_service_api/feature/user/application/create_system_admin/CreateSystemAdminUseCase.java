@@ -4,6 +4,7 @@ import ayd2.p2b.iam_service_api.common.util.TextNormalizer;
 import ayd2.p2b.iam_service_api.common.validation.PasswordRules;
 import ayd2.p2b.iam_service_api.common.validation.PersonalIdValidator;
 import ayd2.p2b.iam_service_api.feature.user.application.exception.UserExceptions;
+import ayd2.p2b.iam_service_api.core.security.password.PasswordHasherPort;
 import ayd2.p2b.iam_service_api.feature.user.application.port.UserRepositoryPort;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.Role;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.UserAccount;
@@ -11,7 +12,6 @@ import ayd2.p2b.iam_service_api.feature.user.dto.internal.RequesterContext;
 import ayd2.p2b.iam_service_api.feature.user.dto.request.CreateSystemAdminRequest;
 import ayd2.p2b.iam_service_api.feature.user.dto.response.UserResponse;
 import ayd2.p2b.iam_service_api.feature.user.mapper.UserMapper;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,16 +22,15 @@ public class CreateSystemAdminUseCase {
 
     private final UserRepositoryPort userRepository;
     private final UserMapper userMapper;
-    private final PasswordEncoder passwordEncoder;
+    private final PasswordHasherPort passwordHasher;
 
     public CreateSystemAdminUseCase(
             UserRepositoryPort userRepository,
             UserMapper userMapper,
-            PasswordEncoder passwordEncoder
-    ) {
+            PasswordHasherPort passwordHasher) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
-        this.passwordEncoder = passwordEncoder;
+        this.passwordHasher = passwordHasher;
     }
 
     @Transactional
@@ -59,7 +58,7 @@ public class CreateSystemAdminUseCase {
 
         UserAccount saved = userRepository.save(UserAccount.builder()
                 .email(email)
-                .passwordHash(passwordEncoder.encode(password))
+                .passwordHash(passwordHasher.encode(password))
                 .fullName(TextNormalizer.trimRequired(request.getFullName()))
                 .organization(TextNormalizer.trimRequired(request.getOrganization()))
                 .phone(TextNormalizer.trimRequired(request.getPhone()))

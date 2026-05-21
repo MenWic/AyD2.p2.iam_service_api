@@ -71,7 +71,8 @@ public final class UserSpecification {
             String pattern = "%" + search.trim().toLowerCase(Locale.ROOT) + "%";
             return criteriaBuilder.or(
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("fullName")), pattern),
-                    criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), pattern)
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("email")), pattern),
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("personalId")), pattern)
             );
         };
     }
