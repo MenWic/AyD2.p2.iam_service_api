@@ -1,6 +1,6 @@
-package ayd2.p2b.iam_service_api.unit.feature.auth.security;
+package ayd2.p2b.iam_service_api.unit.core.security.password;
 
-import ayd2.p2b.iam_service_api.feature.auth.infrastructure.security.BCryptPasswordHasherAdapter;
+import ayd2.p2b.iam_service_api.core.security.password.BCryptPasswordHasherAdapter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

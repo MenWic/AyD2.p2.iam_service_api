@@ -14,8 +14,8 @@ public class ParsedToken {
     private UUID userId;
     private String subject;
     private String email;
+    private String fullName;
     private List<String> roles;
     private TokenType tokenType;
     private Instant expiresAt;
 }
-

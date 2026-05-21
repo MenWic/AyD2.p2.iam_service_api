@@ -9,7 +9,7 @@ import ayd2.p2b.iam_service_api.feature.user.dto.internal.RequesterContext;
 import ayd2.p2b.iam_service_api.feature.user.dto.request.CreateCongressAdminRequest;
 import ayd2.p2b.iam_service_api.feature.user.dto.response.UserResponse;
 import ayd2.p2b.iam_service_api.feature.user.mapper.UserMapper;
-import ayd2.p2b.iam_service_api.feature.auth.application.port.PasswordHasherPort;
+import ayd2.p2b.iam_service_api.core.security.password.PasswordHasherPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,9 +33,12 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class CreateCongressAdminUseCaseTest {
 
-    @Mock private UserRepositoryPort userRepository;
-    @Mock private UserMapper userMapper;
-    @Mock private PasswordHasherPort passwordHasher;
+    @Mock
+    private UserRepositoryPort userRepository;
+    @Mock
+    private UserMapper userMapper;
+    @Mock
+    private PasswordHasherPort passwordHasher;
 
     private CreateCongressAdminUseCase useCase;
 
@@ -166,8 +169,7 @@ class CreateCongressAdminUseCaseTest {
 
         ApiException ex = assertThrows(
                 ApiException.class,
-                () -> useCase.execute(requester(Role.SYSTEM_ADMIN), request)
-        );
+                () -> useCase.execute(requester(Role.SYSTEM_ADMIN), request));
 
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
         assertEquals("validation.failed", ex.getCode());
@@ -186,7 +188,7 @@ class CreateCongressAdminUseCaseTest {
 
         useCase.execute(requester, request);
 
-        verify(passwordEncoder).encode("Password123");
+        verify(passwordHasher).encode("Password123");
     }
 
     @Test

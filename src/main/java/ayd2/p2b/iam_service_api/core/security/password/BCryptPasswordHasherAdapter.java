@@ -1,6 +1,5 @@
-package ayd2.p2b.iam_service_api.feature.auth.infrastructure.security;
+package ayd2.p2b.iam_service_api.core.security.password;
 
-import ayd2.p2b.iam_service_api.feature.auth.application.port.PasswordHasherPort;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 

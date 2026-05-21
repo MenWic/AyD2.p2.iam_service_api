@@ -9,7 +9,7 @@ import ayd2.p2b.iam_service_api.feature.user.dto.internal.RequesterContext;
 import ayd2.p2b.iam_service_api.feature.user.dto.request.CreateGuestSpeakerRequest;
 import ayd2.p2b.iam_service_api.feature.user.dto.response.UserResponse;
 import ayd2.p2b.iam_service_api.feature.user.mapper.UserMapper;
-import ayd2.p2b.iam_service_api.feature.auth.application.port.PasswordHasherPort;
+import ayd2.p2b.iam_service_api.core.security.password.PasswordHasherPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,9 +34,12 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class CreateGuestSpeakerUseCaseTest {
 
-    @Mock private UserRepositoryPort userRepository;
-    @Mock private UserMapper userMapper;
-    @Mock private PasswordHasherPort passwordHasher;
+    @Mock
+    private UserRepositoryPort userRepository;
+    @Mock
+    private UserMapper userMapper;
+    @Mock
+    private PasswordHasherPort passwordHasher;
 
     private CreateGuestSpeakerUseCase useCase;
 

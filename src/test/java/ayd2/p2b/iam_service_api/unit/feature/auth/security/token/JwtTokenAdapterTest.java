@@ -31,6 +31,21 @@ class JwtTokenAdapterTest {
     }
 
     @Test
+    void should_include_fullName_claim_in_access_token() {
+        UserAccount user = UserAccount.builder()
+                .id(UUID.randomUUID())
+                .email("user@domain.com")
+                .fullName("Jane Doe")
+                .roles(Set.of(Role.PARTICIPANT))
+                .build();
+
+        String accessToken = jwtTokenAdapter.generateAccessToken(user);
+        ParsedToken parsedToken = jwtTokenAdapter.parseToken(accessToken, TokenType.ACCESS);
+
+        assertEquals("Jane Doe", parsedToken.getFullName());
+    }
+
+    @Test
     void should_include_roles_list_when_access_token_is_generated() {
         UserAccount user = UserAccount.builder()
                 .id(UUID.randomUUID())
@@ -57,9 +72,7 @@ class JwtTokenAdapterTest {
 
         ApiException exception = assertThrows(
                 ApiException.class,
-                () -> jwtTokenAdapter.parseToken(refreshToken, TokenType.ACCESS)
-        );
+                () -> jwtTokenAdapter.parseToken(refreshToken, TokenType.ACCESS));
         assertEquals("auth.token_invalid", exception.getCode());
     }
 }
-

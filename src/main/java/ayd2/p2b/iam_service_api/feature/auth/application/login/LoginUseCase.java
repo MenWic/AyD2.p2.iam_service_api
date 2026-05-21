@@ -5,7 +5,7 @@ import ayd2.p2b.iam_service_api.feature.auth.dto.response.AuthResponse;
 import ayd2.p2b.iam_service_api.feature.auth.dto.request.LoginRequest;
 import ayd2.p2b.iam_service_api.feature.user.mapper.UserMapper;
 import ayd2.p2b.iam_service_api.feature.auth.application.exception.AuthExceptions;
-import ayd2.p2b.iam_service_api.feature.auth.application.port.PasswordHasherPort;
+import ayd2.p2b.iam_service_api.core.security.password.PasswordHasherPort;
 import ayd2.p2b.iam_service_api.feature.auth.application.port.TokenIssuerPort;
 import ayd2.p2b.iam_service_api.feature.user.application.port.UserRepositoryPort;
 import ayd2.p2b.iam_service_api.common.exception.ApiException;
@@ -26,8 +26,7 @@ public class LoginUseCase {
             UserRepositoryPort userRepository,
             UserMapper userMapper,
             PasswordHasherPort passwordHasher,
-            TokenIssuerPort tokenIssuerPort
-    ) {
+            TokenIssuerPort tokenIssuerPort) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.passwordHasher = passwordHasher;
@@ -68,4 +67,3 @@ public class LoginUseCase {
                 .build();
     }
 }
-

@@ -4,7 +4,7 @@ import ayd2.p2b.iam_service_api.common.util.TextNormalizer;
 import ayd2.p2b.iam_service_api.common.validation.PasswordRules;
 import ayd2.p2b.iam_service_api.common.validation.PersonalIdValidator;
 import ayd2.p2b.iam_service_api.feature.auth.application.exception.AuthExceptions;
-import ayd2.p2b.iam_service_api.feature.auth.application.port.PasswordHasherPort;
+import ayd2.p2b.iam_service_api.core.security.password.PasswordHasherPort;
 import ayd2.p2b.iam_service_api.feature.auth.dto.response.AuthResponse;
 import ayd2.p2b.iam_service_api.feature.user.dto.request.RegisterUserRequest;
 import ayd2.p2b.iam_service_api.feature.user.mapper.UserMapper;
@@ -30,8 +30,7 @@ public class RegisterParticipantUseCase {
             UserRepositoryPort userRepository,
             UserMapper userMapper,
             PasswordHasherPort passwordHasher,
-            TokenIssuerPort tokenIssuerPort
-    ) {
+            TokenIssuerPort tokenIssuerPort) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.passwordHasher = passwordHasher;
@@ -81,4 +80,3 @@ public class RegisterParticipantUseCase {
                 .build();
     }
 }
-

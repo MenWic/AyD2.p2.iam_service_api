@@ -4,7 +4,7 @@ import ayd2.p2b.iam_service_api.common.util.TextNormalizer;
 import ayd2.p2b.iam_service_api.common.validation.PasswordRules;
 import ayd2.p2b.iam_service_api.common.validation.PersonalIdValidator;
 import ayd2.p2b.iam_service_api.feature.user.application.exception.UserExceptions;
-import ayd2.p2b.iam_service_api.feature.auth.application.port.PasswordHasherPort;
+import ayd2.p2b.iam_service_api.core.security.password.PasswordHasherPort;
 import ayd2.p2b.iam_service_api.feature.user.application.port.UserRepositoryPort;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.Role;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.UserAccount;
@@ -27,8 +27,7 @@ public class CreateSystemAdminUseCase {
     public CreateSystemAdminUseCase(
             UserRepositoryPort userRepository,
             UserMapper userMapper,
-            PasswordHasherPort passwordHasher
-    ) {
+            PasswordHasherPort passwordHasher) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.passwordHasher = passwordHasher;

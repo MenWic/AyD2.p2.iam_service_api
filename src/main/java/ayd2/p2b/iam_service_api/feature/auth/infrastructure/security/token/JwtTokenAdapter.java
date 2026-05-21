@@ -70,7 +70,8 @@ public class JwtTokenAdapter implements TokenIssuerPort, TokenParserPort {
     }
 
     // JJWT's Claims#get returns raw List when the claim type is a JSON array;
-    // the JWT spec guarantees roles is a List<String> since we wrote it that way in generateAccessToken.
+    // the JWT spec guarantees roles is a List<String> since we wrote it that way in
+    // generateAccessToken.
     @SuppressWarnings("unchecked")
     @Override
     public ParsedToken parseToken(String token, TokenType expectedType) {
@@ -88,15 +89,18 @@ public class JwtTokenAdapter implements TokenIssuerPort, TokenParserPort {
 
             UUID userId = UUID.fromString(claims.get("userId", String.class));
             List<String> roles = claims.get("roles", List.class);
+            String fullName = claims.get("fullName", String.class);
             Instant expiresAt = claims.getExpiration().toInstant();
 
-            return new ParsedToken(
-                    userId,
-                    claims.getSubject(),
-                    claims.get("email", String.class),
-                    roles == null ? List.of() : roles,
-                    TokenType.valueOf(tokenTypeClaim),
-                    expiresAt);
+            return ParsedToken.builder()
+                    .userId(userId)
+                    .subject(claims.getSubject())
+                    .email(claims.get("email", String.class))
+                    .fullName(fullName)
+                    .roles(roles == null ? List.of() : roles)
+                    .tokenType(TokenType.valueOf(tokenTypeClaim))
+                    .expiresAt(expiresAt)
+                    .build();
         } catch (ExpiredJwtException ex) {
             throw new ApiException(HttpStatus.UNAUTHORIZED, "auth.token_expired", "Token expired");
         } catch (JwtException | IllegalArgumentException ex) {

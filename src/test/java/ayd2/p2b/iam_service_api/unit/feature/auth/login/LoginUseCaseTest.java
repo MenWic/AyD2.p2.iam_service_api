@@ -10,7 +10,7 @@ import ayd2.p2b.iam_service_api.feature.user.domain.model.Role;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.UserAccount;
 import ayd2.p2b.iam_service_api.feature.user.dto.response.UserResponse;
 import ayd2.p2b.iam_service_api.feature.user.mapper.UserMapper;
-import ayd2.p2b.iam_service_api.feature.auth.application.port.PasswordHasherPort;
+import ayd2.p2b.iam_service_api.core.security.password.PasswordHasherPort;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,10 +30,14 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class LoginUseCaseTest {
 
-    @Mock private UserRepositoryPort userRepository;
-    @Mock private UserMapper userMapper;
-    @Mock private TokenIssuerPort tokenIssuerPort;
-    @Mock private PasswordHasherPort passwordHasher;
+    @Mock
+    private UserRepositoryPort userRepository;
+    @Mock
+    private UserMapper userMapper;
+    @Mock
+    private TokenIssuerPort tokenIssuerPort;
+    @Mock
+    private PasswordHasherPort passwordHasher;
 
     private LoginUseCase useCase;
 
@@ -129,7 +133,8 @@ class LoginUseCaseTest {
         ApiException nullRolesException = assertThrows(ApiException.class, () -> useCase.execute(request));
         assertEquals("domain.invariant_violated", nullRolesException.getCode());
 
-        when(userRepository.findByEmailIgnoreCase("participant@domain.com")).thenReturn(Optional.of(userWithEmptyRoles));
+        when(userRepository.findByEmailIgnoreCase("participant@domain.com"))
+                .thenReturn(Optional.of(userWithEmptyRoles));
 
         ApiException emptyRolesException = assertThrows(ApiException.class, () -> useCase.execute(request));
         assertEquals("domain.invariant_violated", emptyRolesException.getCode());
@@ -169,4 +174,3 @@ class LoginUseCaseTest {
                 .build();
     }
 }
-

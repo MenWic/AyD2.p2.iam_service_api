@@ -49,298 +49,388 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest({AuthController.class, UserController.class})
+@WebMvcTest({ AuthController.class, UserController.class })
 @AutoConfigureMockMvc
-@Import({SecurityConfig.class, JwtAuthenticationFilter.class, RestAuthenticationEntryPoint.class})
+@Import({ SecurityConfig.class, JwtAuthenticationFilter.class, RestAuthenticationEntryPoint.class })
 class SecurityFilterControllerTest {
 
-    @Autowired
-    private MockMvc mockMvc;
+        @Autowired
+        private MockMvc mockMvc;
 
-    @MockitoBean private LoginUseCase loginUseCase;
-    @MockitoBean private RefreshTokenUseCase refreshTokenUseCase;
-    @MockitoBean private LogoutUseCase logoutUseCase;
-    @MockitoBean private RegisterParticipantUseCase registerParticipantUseCase;
+        @MockitoBean
+        private LoginUseCase loginUseCase;
+        @MockitoBean
+        private RefreshTokenUseCase refreshTokenUseCase;
+        @MockitoBean
+        private LogoutUseCase logoutUseCase;
+        @MockitoBean
+        private RegisterParticipantUseCase registerParticipantUseCase;
 
-    @MockitoBean private GetCurrentUserUseCase getCurrentUserUseCase;
-    @MockitoBean private GetUserByIdUseCase getUserByIdUseCase;
-    @MockitoBean private ListUsersUseCase listUsersUseCase;
-    @MockitoBean private ActivateUserUseCase activateUserUseCase;
-    @MockitoBean private DeactivateUserUseCase deactivateUserUseCase;
-    @MockitoBean private CreateSystemAdminUseCase createSystemAdminUseCase;
-    @MockitoBean private CreateCongressAdminUseCase createCongressAdminUseCase;
-    @MockitoBean private CreateGuestSpeakerUseCase createGuestSpeakerUseCase;
-    @MockitoBean private UpdateUserUseCase updateUserUseCase;
-    @MockitoBean private CanBeCommitteeUseCase canBeCommitteeUseCase;
+        @MockitoBean
+        private GetCurrentUserUseCase getCurrentUserUseCase;
+        @MockitoBean
+        private GetUserByIdUseCase getUserByIdUseCase;
+        @MockitoBean
+        private ListUsersUseCase listUsersUseCase;
+        @MockitoBean
+        private ActivateUserUseCase activateUserUseCase;
+        @MockitoBean
+        private DeactivateUserUseCase deactivateUserUseCase;
+        @MockitoBean
+        private CreateSystemAdminUseCase createSystemAdminUseCase;
+        @MockitoBean
+        private CreateCongressAdminUseCase createCongressAdminUseCase;
+        @MockitoBean
+        private CreateGuestSpeakerUseCase createGuestSpeakerUseCase;
+        @MockitoBean
+        private UpdateUserUseCase updateUserUseCase;
+        @MockitoBean
+        private CanBeCommitteeUseCase canBeCommitteeUseCase;
 
-    @MockitoBean private TokenParserPort tokenParserPort;
+        @MockitoBean
+        private TokenParserPort tokenParserPort;
 
-    @Test
-    void should_allow_public_register_without_authorization_header() throws Exception {
-        UUID userId = UUID.randomUUID();
-        when(registerParticipantUseCase.execute(any())).thenReturn(authResponse(userId));
+        @Test
+        void should_allow_public_register_without_authorization_header() throws Exception {
+                UUID userId = UUID.randomUUID();
+                when(registerParticipantUseCase.execute(any())).thenReturn(authResponse(userId));
 
-        String payload = """
-                {
-                  "email": "participant@domain.com",
-                  "password": "Password123",
-                  "fullName": "Participant User",
-                  "organization": "Code n Bugs",
-                  "phone": "555-0101",
-                  "personalId": "A123B"
-                }
-                """;
-
-        mockMvc.perform(post("/users/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(payload))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.data.user.id").value(userId.toString()));
-
-        verify(registerParticipantUseCase).execute(any());
-    }
-
-    @Test
-    void should_allow_public_login_without_authorization_header_and_return_api_response() throws Exception {
-        UUID userId = UUID.randomUUID();
-        when(loginUseCase.execute(any())).thenReturn(authResponse(userId));
-
-        mockMvc.perform(post("/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
+                String payload = """
                                 {
                                   "email": "participant@domain.com",
-                                  "password": "Password123"
+                                  "password": "Password123",
+                                  "fullName": "Participant User",
+                                  "organization": "Code n Bugs",
+                                  "phone": "555-0101",
+                                  "personalId": "A123B"
                                 }
-                                """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.accessToken").value("access-token"))
-                .andExpect(jsonPath("$.data.refreshToken").value("refresh-token"))
-                .andExpect(jsonPath("$.data.user.id").value(userId.toString()));
+                                """;
 
-        verify(loginUseCase).execute(any());
-    }
+                mockMvc.perform(post("/users/register")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(payload))
+                                .andExpect(status().isCreated())
+                                .andExpect(jsonPath("$.data.user.id").value(userId.toString()));
 
-    @Test
-    void should_allow_public_refresh_without_authorization_header_and_return_api_response() throws Exception {
-        when(refreshTokenUseCase.execute(any())).thenReturn(RefreshResponse.builder().accessToken("new-access-token").build());
+                verify(registerParticipantUseCase).execute(any());
+        }
 
-        mockMvc.perform(post("/auth/refresh")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "refreshToken": "refresh-token"
-                                }
-                                """))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.accessToken").value("new-access-token"));
+        @Test
+        void should_allow_public_login_without_authorization_header_and_return_api_response() throws Exception {
+                UUID userId = UUID.randomUUID();
+                when(loginUseCase.execute(any())).thenReturn(authResponse(userId));
 
-        verify(refreshTokenUseCase).execute(any());
-    }
+                mockMvc.perform(post("/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "email": "participant@domain.com",
+                                                  "password": "Password123"
+                                                }
+                                                """))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.accessToken").value("access-token"))
+                                .andExpect(jsonPath("$.data.refreshToken").value("refresh-token"))
+                                .andExpect(jsonPath("$.data.user.id").value(userId.toString()));
 
-    @Test
-    void should_return_401_for_logout_without_access_token() throws Exception {
-        mockMvc.perform(post("/auth/logout")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "refreshToken": "refresh-token"
-                                }
-                                """))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value("auth.token_invalid"));
-    }
+                verify(loginUseCase).execute(any());
+        }
 
-    @Test
-    void should_reach_logout_use_case_with_valid_access_token_and_return_204() throws Exception {
-        UUID userId = UUID.randomUUID();
-        when(tokenParserPort.parseToken("valid-access-token", TokenType.ACCESS))
-                .thenReturn(parsedAccessToken(userId, Role.PARTICIPANT));
+        @Test
+        void should_allow_public_refresh_without_authorization_header_and_return_api_response() throws Exception {
+                when(refreshTokenUseCase.execute(any()))
+                                .thenReturn(RefreshResponse.builder().accessToken("new-access-token").build());
 
-        mockMvc.perform(post("/auth/logout")
-                        .header("Authorization", "Bearer valid-access-token")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "refreshToken": "refresh-token"
-                                }
-                                """))
-                .andExpect(status().isNoContent())
-                .andExpect(content().string(""));
+                mockMvc.perform(post("/auth/refresh")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "refreshToken": "refresh-token"
+                                                }
+                                                """))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.accessToken").value("new-access-token"));
 
-        verify(logoutUseCase).execute(eq(userId), any());
-    }
+                verify(refreshTokenUseCase).execute(any());
+        }
 
-    @Test
-    void should_return_401_for_users_me_without_access_token() throws Exception {
-        mockMvc.perform(get("/users/me"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value("auth.token_invalid"));
-    }
+        @Test
+        void should_return_401_for_logout_without_access_token() throws Exception {
+                mockMvc.perform(post("/auth/logout")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "refreshToken": "refresh-token"
+                                                }
+                                                """))
+                                .andExpect(status().isUnauthorized())
+                                .andExpect(jsonPath("$.code").value("auth.token_invalid"));
+        }
 
-    @Test
-    void should_reach_users_me_with_valid_access_token_and_return_api_response() throws Exception {
-        UUID userId = UUID.randomUUID();
-        when(tokenParserPort.parseToken("valid-access-token", TokenType.ACCESS))
-                .thenReturn(parsedAccessToken(userId, Role.PARTICIPANT));
-        when(getCurrentUserUseCase.execute(userId)).thenReturn(userResponse(userId, Set.of("PARTICIPANT")));
+        @Test
+        void should_reach_logout_use_case_with_valid_access_token_and_return_204() throws Exception {
+                UUID userId = UUID.randomUUID();
+                when(tokenParserPort.parseToken("valid-access-token", TokenType.ACCESS))
+                                .thenReturn(parsedAccessToken(userId, Role.PARTICIPANT));
 
-        mockMvc.perform(get("/users/me")
-                        .header("Authorization", "Bearer valid-access-token"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value(userId.toString()))
-                .andExpect(jsonPath("$.data.roles[0]").value("PARTICIPANT"));
+                mockMvc.perform(post("/auth/logout")
+                                .header("Authorization", "Bearer valid-access-token")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "refreshToken": "refresh-token"
+                                                }
+                                                """))
+                                .andExpect(status().isNoContent())
+                                .andExpect(content().string(""));
 
-        verify(getCurrentUserUseCase).execute(userId);
-    }
+                verify(logoutUseCase).execute(eq(userId), any());
+        }
 
-    @Test
-    void should_return_401_for_put_users_id_without_access_token() throws Exception {
-        mockMvc.perform(put("/users/{id}", UUID.randomUUID())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "fullName": "Updated Name",
-                                  "organization": "Updated Org",
-                                  "phone": "555-9999",
-                                  "photoUrl": "https://cdn.domain.com/new-photo.png"
-                                }
-                                """))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value("auth.token_invalid"));
-    }
+        @Test
+        void should_return_401_for_users_me_without_access_token() throws Exception {
+                mockMvc.perform(get("/users/me"))
+                                .andExpect(status().isUnauthorized())
+                                .andExpect(jsonPath("$.code").value("auth.token_invalid"));
+        }
 
-    @Test
-    void should_return_401_for_can_be_committee_without_access_token() throws Exception {
-        mockMvc.perform(get("/users/{id}/can-be-committee", UUID.randomUUID()))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value("auth.token_invalid"));
-    }
+        @Test
+        void should_reach_users_me_with_valid_access_token_and_return_api_response() throws Exception {
+                UUID userId = UUID.randomUUID();
+                when(tokenParserPort.parseToken("valid-access-token", TokenType.ACCESS))
+                                .thenReturn(parsedAccessToken(userId, Role.PARTICIPANT));
+                when(getCurrentUserUseCase.execute(userId)).thenReturn(userResponse(userId, Set.of("PARTICIPANT")));
 
-    @Test
-    void should_reach_can_be_committee_with_valid_congress_admin_token() throws Exception {
-        UUID requesterId = UUID.randomUUID();
-        UUID targetId = UUID.randomUUID();
-        when(tokenParserPort.parseToken("congress-admin-token", TokenType.ACCESS))
-                .thenReturn(parsedAccessToken(requesterId, Role.CONGRESS_ADMIN));
-        when(canBeCommitteeUseCase.execute(any(), eq(targetId)))
-                .thenReturn(CommitteeEligibilityResponse.builder().eligible(true).build());
+                mockMvc.perform(get("/users/me")
+                                .header("Authorization", "Bearer valid-access-token"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.id").value(userId.toString()))
+                                .andExpect(jsonPath("$.data.roles[0]").value("PARTICIPANT"));
 
-        mockMvc.perform(get("/users/{id}/can-be-committee", targetId)
-                        .header("Authorization", "Bearer congress-admin-token"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.eligible").value(true));
+                verify(getCurrentUserUseCase).execute(userId);
+        }
 
-        verify(canBeCommitteeUseCase).execute(any(), eq(targetId));
-    }
+        @Test
+        void should_return_401_for_put_users_id_without_access_token() throws Exception {
+                mockMvc.perform(put("/users/{id}", UUID.randomUUID())
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "fullName": "Updated Name",
+                                                  "organization": "Updated Org",
+                                                  "phone": "555-9999",
+                                                  "photoUrl": "https://cdn.domain.com/new-photo.png"
+                                                }
+                                                """))
+                                .andExpect(status().isUnauthorized())
+                                .andExpect(jsonPath("$.code").value("auth.token_invalid"));
+        }
 
-    @Test
-    void should_return_401_for_invalid_access_token_on_protected_route() throws Exception {
-        when(tokenParserPort.parseToken("invalid-token", TokenType.ACCESS))
-                .thenThrow(new ApiException(HttpStatus.UNAUTHORIZED, "auth.token_invalid", "Invalid token"));
+        @Test
+        void should_return_401_for_can_be_committee_without_access_token() throws Exception {
+                mockMvc.perform(get("/users/{id}/can-be-committee", UUID.randomUUID()))
+                                .andExpect(status().isUnauthorized())
+                                .andExpect(jsonPath("$.code").value("auth.token_invalid"));
+        }
 
-        mockMvc.perform(get("/users/me")
-                        .header("Authorization", "Bearer invalid-token"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value("auth.token_invalid"));
-    }
+        @Test
+        void should_reach_can_be_committee_with_valid_congress_admin_token() throws Exception {
+                UUID requesterId = UUID.randomUUID();
+                UUID targetId = UUID.randomUUID();
+                when(tokenParserPort.parseToken("congress-admin-token", TokenType.ACCESS))
+                                .thenReturn(parsedAccessToken(requesterId, Role.CONGRESS_ADMIN));
+                when(canBeCommitteeUseCase.execute(any(), eq(targetId)))
+                                .thenReturn(CommitteeEligibilityResponse.builder().eligible(true).build());
 
-    @Test
-    void should_not_open_unknown_route_publicly() throws Exception {
-        mockMvc.perform(get("/unknown"))
-                .andExpect(status().isUnauthorized())
-                .andExpect(jsonPath("$.code").value("auth.token_invalid"));
-    }
+                mockMvc.perform(get("/users/{id}/can-be-committee", targetId)
+                                .header("Authorization", "Bearer congress-admin-token"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.eligible").value(true));
 
-    @Test
-    void should_return_page_response_shape_for_users_list() throws Exception {
-        UUID requesterId = UUID.randomUUID();
-        when(tokenParserPort.parseToken("system-admin-token", TokenType.ACCESS))
-                .thenReturn(parsedAccessToken(requesterId, Role.SYSTEM_ADMIN));
-        when(listUsersUseCase.execute(any(), any(), any()))
-                .thenReturn(PageResponse.<UserResponse>builder()
-                        .items(List.of(userResponse(UUID.randomUUID(), Set.of("PARTICIPANT"))))
-                        .page(0)
-                        .size(20)
-                        .totalItems(1)
-                        .totalPages(1)
-                        .build());
+                verify(canBeCommitteeUseCase).execute(any(), eq(targetId));
+        }
 
-        mockMvc.perform(get("/users")
-                        .header("Authorization", "Bearer system-admin-token"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.items").isArray())
-                .andExpect(jsonPath("$.data.page").value(0))
-                .andExpect(jsonPath("$.data.size").value(20))
-                .andExpect(jsonPath("$.data.totalItems").value(1))
-                .andExpect(jsonPath("$.data.totalPages").value(1));
-    }
+        @Test
+        void should_return_401_for_invalid_access_token_on_protected_route() throws Exception {
+                when(tokenParserPort.parseToken("invalid-token", TokenType.ACCESS))
+                                .thenThrow(new ApiException(HttpStatus.UNAUTHORIZED, "auth.token_invalid",
+                                                "Invalid token"));
 
-    @Test
-    void should_return_validation_failed_problem_detail_for_invalid_request_body() throws Exception {
-        mockMvc.perform(post("/auth/login")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "email": "",
-                                  "password": ""
-                                }
-                                """))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.code").value("validation.failed"))
-                .andExpect(jsonPath("$.errors").exists());
-    }
+                mockMvc.perform(get("/users/me")
+                                .header("Authorization", "Bearer invalid-token"))
+                                .andExpect(status().isUnauthorized())
+                                .andExpect(jsonPath("$.code").value("auth.token_invalid"));
+        }
 
-    @Test
-    void should_return_stable_problem_detail_code_for_use_case_forbidden_error() throws Exception {
-        UUID requesterId = UUID.randomUUID();
-        UUID targetId = UUID.randomUUID();
-        when(tokenParserPort.parseToken("forbidden-token", TokenType.ACCESS))
-                .thenReturn(parsedAccessToken(requesterId, Role.CONGRESS_ADMIN));
-        when(canBeCommitteeUseCase.execute(any(), eq(targetId)))
-                .thenThrow(new ApiException(HttpStatus.FORBIDDEN, "auth.forbidden", "Forbidden"));
+        @Test
+        void should_not_open_unknown_route_publicly() throws Exception {
+                mockMvc.perform(get("/unknown"))
+                                .andExpect(status().isUnauthorized())
+                                .andExpect(jsonPath("$.code").value("auth.token_invalid"));
+        }
 
-        mockMvc.perform(get("/users/{id}/can-be-committee", targetId)
-                        .header("Authorization", "Bearer forbidden-token"))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.code").value("auth.forbidden"));
-    }
+        @Test
+        void should_return_page_response_shape_for_users_list() throws Exception {
+                UUID requesterId = UUID.randomUUID();
+                when(tokenParserPort.parseToken("system-admin-token", TokenType.ACCESS))
+                                .thenReturn(parsedAccessToken(requesterId, Role.SYSTEM_ADMIN));
+                when(listUsersUseCase.execute(any(), any(), any()))
+                                .thenReturn(PageResponse.<UserResponse>builder()
+                                                .items(List.of(userResponse(UUID.randomUUID(), Set.of("PARTICIPANT"))))
+                                                .page(0)
+                                                .size(20)
+                                                .totalItems(1)
+                                                .totalPages(1)
+                                                .build());
 
-    private ParsedToken parsedAccessToken(UUID userId, Role role) {
-        return ParsedToken.builder()
-                .userId(userId)
-                .subject(userId.toString())
-                .email("user@domain.com")
-                .roles(List.of(role.name()))
-                .tokenType(TokenType.ACCESS)
-                .expiresAt(Instant.now().plusSeconds(3600))
-                .build();
-    }
+                mockMvc.perform(get("/users")
+                                .header("Authorization", "Bearer system-admin-token"))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.data.items").isArray())
+                                .andExpect(jsonPath("$.data.page").value(0))
+                                .andExpect(jsonPath("$.data.size").value(20))
+                                .andExpect(jsonPath("$.data.totalItems").value(1))
+                                .andExpect(jsonPath("$.data.totalPages").value(1));
+        }
 
-    private AuthResponse authResponse(UUID userId) {
-        return AuthResponse.builder()
-                .accessToken("access-token")
-                .refreshToken("refresh-token")
-                .user(userResponse(userId, Set.of("PARTICIPANT")))
-                .build();
-    }
+        @Test
+        void should_return_validation_failed_problem_detail_for_invalid_request_body() throws Exception {
+                mockMvc.perform(post("/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "email": "",
+                                                  "password": ""
+                                                }
+                                                """))
+                                .andExpect(status().isBadRequest())
+                                .andExpect(jsonPath("$.code").value("validation.failed"))
+                                .andExpect(jsonPath("$.errors").exists());
+        }
 
-    private UserResponse userResponse(UUID userId, Set<String> roles) {
-        return UserResponse.builder()
-                .id(userId)
-                .email("participant@domain.com")
-                .fullName("Participant User")
-                .organization("Code n Bugs")
-                .phone("555-0101")
-                .personalId("A123B")
-                .active(true)
-                .roles(roles)
-                .build();
-    }
+        @Test
+        void should_return_stable_problem_detail_code_for_use_case_forbidden_error() throws Exception {
+                UUID requesterId = UUID.randomUUID();
+                UUID targetId = UUID.randomUUID();
+                when(tokenParserPort.parseToken("forbidden-token", TokenType.ACCESS))
+                                .thenReturn(parsedAccessToken(requesterId, Role.CONGRESS_ADMIN));
+                when(canBeCommitteeUseCase.execute(any(), eq(targetId)))
+                                .thenThrow(new ApiException(HttpStatus.FORBIDDEN, "auth.forbidden", "Forbidden"));
+
+                mockMvc.perform(get("/users/{id}/can-be-committee", targetId)
+                                .header("Authorization", "Bearer forbidden-token"))
+                                .andExpect(status().isForbidden())
+                                .andExpect(jsonPath("$.code").value("auth.forbidden"));
+        }
+
+        @Test
+        void should_return_403_for_create_system_admin_with_congress_admin_token() throws Exception {
+                UUID requesterId = UUID.randomUUID();
+                when(tokenParserPort.parseToken("congress-admin-token", TokenType.ACCESS))
+                                .thenReturn(parsedAccessToken(requesterId, Role.CONGRESS_ADMIN));
+
+                mockMvc.perform(post("/users/system-admins")
+                                .header("Authorization", "Bearer congress-admin-token")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{}"))
+                                .andExpect(status().isForbidden());
+        }
+
+        @Test
+        void should_return_403_for_create_congress_admin_with_congress_admin_token() throws Exception {
+                UUID requesterId = UUID.randomUUID();
+                when(tokenParserPort.parseToken("congress-admin-token", TokenType.ACCESS))
+                                .thenReturn(parsedAccessToken(requesterId, Role.CONGRESS_ADMIN));
+
+                mockMvc.perform(post("/users/congress-admins")
+                                .header("Authorization", "Bearer congress-admin-token")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{}"))
+                                .andExpect(status().isForbidden());
+        }
+
+        @Test
+        void should_return_403_for_create_guest_speaker_with_system_admin_token() throws Exception {
+                UUID requesterId = UUID.randomUUID();
+                when(tokenParserPort.parseToken("system-admin-token", TokenType.ACCESS))
+                                .thenReturn(parsedAccessToken(requesterId, Role.SYSTEM_ADMIN));
+
+                mockMvc.perform(post("/users/guest-speakers")
+                                .header("Authorization", "Bearer system-admin-token")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("{}"))
+                                .andExpect(status().isForbidden());
+        }
+
+        @Test
+        void should_return_403_for_activate_without_system_admin() throws Exception {
+                UUID requesterId = UUID.randomUUID();
+                when(tokenParserPort.parseToken("participant-token", TokenType.ACCESS))
+                                .thenReturn(parsedAccessToken(requesterId, Role.PARTICIPANT));
+
+                mockMvc.perform(patch("/users/{id}/activate", UUID.randomUUID())
+                                .header("Authorization", "Bearer participant-token"))
+                                .andExpect(status().isForbidden());
+        }
+
+        @Test
+        void should_return_403_for_list_users_with_participant_token() throws Exception {
+                UUID requesterId = UUID.randomUUID();
+                when(tokenParserPort.parseToken("participant-token", TokenType.ACCESS))
+                                .thenReturn(parsedAccessToken(requesterId, Role.PARTICIPANT));
+
+                mockMvc.perform(get("/users")
+                                .header("Authorization", "Bearer participant-token"))
+                                .andExpect(status().isForbidden());
+        }
+
+        @Test
+        void should_return_403_for_can_be_committee_with_system_admin_token() throws Exception {
+                UUID requesterId = UUID.randomUUID();
+                when(tokenParserPort.parseToken("system-admin-token", TokenType.ACCESS))
+                                .thenReturn(parsedAccessToken(requesterId, Role.SYSTEM_ADMIN));
+
+                mockMvc.perform(get("/users/{id}/can-be-committee", UUID.randomUUID())
+                                .header("Authorization", "Bearer system-admin-token"))
+                                .andExpect(status().isForbidden());
+        }
+
+        private ParsedToken parsedAccessToken(UUID userId, Role role) {
+                return ParsedToken.builder()
+                                .userId(userId)
+                                .subject(userId.toString())
+                                .email("user@domain.com")
+                                .roles(List.of(role.name()))
+                                .tokenType(TokenType.ACCESS)
+                                .expiresAt(Instant.now().plusSeconds(3600))
+                                .build();
+        }
+
+        private AuthResponse authResponse(UUID userId) {
+                return AuthResponse.builder()
+                                .accessToken("access-token")
+                                .refreshToken("refresh-token")
+                                .user(userResponse(userId, Set.of("PARTICIPANT")))
+                                .build();
+        }
+
+        private UserResponse userResponse(UUID userId, Set<String> roles) {
+                return UserResponse.builder()
+                                .id(userId)
+                                .email("participant@domain.com")
+                                .fullName("Participant User")
+                                .organization("Code n Bugs")
+                                .phone("555-0101")
+                                .personalId("A123B")
+                                .active(true)
+                                .roles(roles)
+                                .build();
+        }
 }
