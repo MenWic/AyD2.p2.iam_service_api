@@ -21,6 +21,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -46,10 +47,7 @@ class LogoutUseCaseTest {
         UUID userId = UUID.randomUUID();
         LogoutRequest request = new LogoutRequest();
         request.setRefreshToken("refresh-token");
-        ParsedToken token = ParsedToken.builder()
-                .userId(userId).subject(userId.toString()).email(null)
-                .roles(List.of()).tokenType(TokenType.REFRESH).expiresAt(Instant.now().plusSeconds(600))
-                .build();
+        ParsedToken token = ParsedToken.builder().userId(userId).subject(userId.toString()).email(null).roles(List.of()).tokenType(TokenType.REFRESH).expiresAt(Instant.now().plusSeconds(600)).build();
 
         when(tokenParserPort.parseToken("refresh-token", TokenType.REFRESH)).thenReturn(token);
         when(tokenHashPort.sha256("refresh-token")).thenReturn("hash");
@@ -62,6 +60,22 @@ class LogoutUseCaseTest {
         verify(blacklistPort).save(hashCaptor.capture(), userCaptor.capture(), org.mockito.ArgumentMatchers.any());
         assertEquals(userId, userCaptor.getValue());
         assertEquals("hash", hashCaptor.getValue());
+    }
+
+    @Test
+    void should_not_save_again_when_refresh_token_is_already_blacklisted() {
+        UUID userId = UUID.randomUUID();
+        LogoutRequest request = new LogoutRequest();
+        request.setRefreshToken("refresh-token");
+        ParsedToken token = ParsedToken.builder().userId(userId).subject(userId.toString()).email(null).roles(List.of()).tokenType(TokenType.REFRESH).expiresAt(Instant.now().plusSeconds(600)).build();
+
+        when(tokenParserPort.parseToken("refresh-token", TokenType.REFRESH)).thenReturn(token);
+        when(tokenHashPort.sha256("refresh-token")).thenReturn("hash");
+        when(blacklistPort.existsByTokenHash("hash")).thenReturn(true);
+
+        useCase.execute(userId, request);
+
+        verify(blacklistPort, never()).save(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
     }
 
     @Test
@@ -97,10 +111,7 @@ class LogoutUseCaseTest {
         UUID tokenUserId = UUID.randomUUID();
         LogoutRequest request = new LogoutRequest();
         request.setRefreshToken("refresh-token");
-        ParsedToken token = ParsedToken.builder()
-                .userId(tokenUserId).subject(tokenUserId.toString()).email(null)
-                .roles(List.of()).tokenType(TokenType.REFRESH).expiresAt(Instant.now().plusSeconds(600))
-                .build();
+        ParsedToken token = ParsedToken.builder().userId(tokenUserId).subject(tokenUserId.toString()).email(null).roles(List.of()).tokenType(TokenType.REFRESH).expiresAt(Instant.now().plusSeconds(600)).build();
 
         when(tokenParserPort.parseToken("refresh-token", TokenType.REFRESH)).thenReturn(token);
 

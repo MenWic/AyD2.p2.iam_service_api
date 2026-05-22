@@ -21,11 +21,13 @@ import ayd2.p2b.iam_service_api.feature.user.dto.response.UserResponse;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.Role;
 import ayd2.p2b.iam_service_api.feature.user.controller.UserController;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -36,6 +38,7 @@ import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -51,18 +54,30 @@ class UserControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockitoBean private GetCurrentUserUseCase getCurrentUserUseCase;
-    @MockitoBean private RegisterParticipantUseCase registerParticipantUseCase;
-    @MockitoBean private GetUserByIdUseCase getUserByIdUseCase;
-    @MockitoBean private ListUsersUseCase listUsersUseCase;
-    @MockitoBean private ActivateUserUseCase activateUserUseCase;
-    @MockitoBean private DeactivateUserUseCase deactivateUserUseCase;
-    @MockitoBean private CreateSystemAdminUseCase createSystemAdminUseCase;
-    @MockitoBean private CreateCongressAdminUseCase createCongressAdminUseCase;
-    @MockitoBean private CreateGuestSpeakerUseCase createGuestSpeakerUseCase;
-    @MockitoBean private UpdateUserUseCase updateUserUseCase;
-    @MockitoBean private CanBeCommitteeUseCase canBeCommitteeUseCase;
-    @MockitoBean private TokenParserPort tokenParserPort;
+    @MockitoBean
+    private GetCurrentUserUseCase getCurrentUserUseCase;
+    @MockitoBean
+    private RegisterParticipantUseCase registerParticipantUseCase;
+    @MockitoBean
+    private GetUserByIdUseCase getUserByIdUseCase;
+    @MockitoBean
+    private ListUsersUseCase listUsersUseCase;
+    @MockitoBean
+    private ActivateUserUseCase activateUserUseCase;
+    @MockitoBean
+    private DeactivateUserUseCase deactivateUserUseCase;
+    @MockitoBean
+    private CreateSystemAdminUseCase createSystemAdminUseCase;
+    @MockitoBean
+    private CreateCongressAdminUseCase createCongressAdminUseCase;
+    @MockitoBean
+    private CreateGuestSpeakerUseCase createGuestSpeakerUseCase;
+    @MockitoBean
+    private UpdateUserUseCase updateUserUseCase;
+    @MockitoBean
+    private CanBeCommitteeUseCase canBeCommitteeUseCase;
+    @MockitoBean
+    private TokenParserPort tokenParserPort;
 
     @Test
     void should_return_201_api_response_when_registering_with_valid_payload() throws Exception {
@@ -256,6 +271,73 @@ class UserControllerTest {
                 .andExpect(jsonPath("$.data.items[0].id").value(listedUserId.toString()))
                 .andExpect(jsonPath("$.data.totalItems").value(1))
                 .andExpect(jsonPath("$.data.totalPages").value(1));
+    }
+
+    @Test
+    void should_use_default_pageable_when_listing_users_without_page_or_size() throws Exception {
+        UsernamePasswordAuthenticationToken auth = auth(UUID.randomUUID(), Set.of(Role.SYSTEM_ADMIN));
+        when(listUsersUseCase.execute(any(RequesterContext.class), any(), any()))
+                .thenReturn(emptyUsersPage(0, 20));
+
+        mockMvc.perform(get("/users")
+                        .principal(auth)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(listUsersUseCase).execute(any(RequesterContext.class), any(), pageableCaptor.capture());
+        assertPageable(pageableCaptor.getValue(), 0, 20);
+    }
+
+    @Test
+    void should_normalize_negative_page_to_zero_when_listing_users() throws Exception {
+        UsernamePasswordAuthenticationToken auth = auth(UUID.randomUUID(), Set.of(Role.SYSTEM_ADMIN));
+        when(listUsersUseCase.execute(any(RequesterContext.class), any(), any()))
+                .thenReturn(emptyUsersPage(0, 20));
+
+        mockMvc.perform(get("/users")
+                        .param("page", "-3")
+                        .principal(auth)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(listUsersUseCase).execute(any(RequesterContext.class), any(), pageableCaptor.capture());
+        assertPageable(pageableCaptor.getValue(), 0, 20);
+    }
+
+    @Test
+    void should_use_default_size_when_listing_users_with_zero_or_negative_size() throws Exception {
+        UsernamePasswordAuthenticationToken auth = auth(UUID.randomUUID(), Set.of(Role.SYSTEM_ADMIN));
+        when(listUsersUseCase.execute(any(RequesterContext.class), any(), any()))
+                .thenReturn(emptyUsersPage(0, 20));
+
+        mockMvc.perform(get("/users")
+                        .param("size", "0")
+                        .principal(auth)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(listUsersUseCase).execute(any(RequesterContext.class), any(), pageableCaptor.capture());
+        assertPageable(pageableCaptor.getValue(), 0, 20);
+    }
+
+    @Test
+    void should_cap_size_to_max_when_listing_users_with_oversized_page_size() throws Exception {
+        UsernamePasswordAuthenticationToken auth = auth(UUID.randomUUID(), Set.of(Role.SYSTEM_ADMIN));
+        when(listUsersUseCase.execute(any(RequesterContext.class), any(), any()))
+                .thenReturn(emptyUsersPage(0, 100));
+
+        mockMvc.perform(get("/users")
+                        .param("size", "999")
+                        .principal(auth)
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(listUsersUseCase).execute(any(RequesterContext.class), any(), pageableCaptor.capture());
+        assertPageable(pageableCaptor.getValue(), 0, 100);
     }
 
     @Test
@@ -670,6 +752,15 @@ class UserControllerTest {
                         .principal(auth)
                         .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden());
+    }
+
+    private PageResponse<UserResponse> emptyUsersPage(int page, int size) {
+        return new PageResponse<>(List.of(), page, size, 0L, 0);
+    }
+
+    private void assertPageable(Pageable pageable, int expectedPage, int expectedSize) {
+        org.junit.jupiter.api.Assertions.assertEquals(expectedPage, pageable.getPageNumber());
+        org.junit.jupiter.api.Assertions.assertEquals(expectedSize, pageable.getPageSize());
     }
 
     private UsernamePasswordAuthenticationToken auth(UUID userId, Set<Role> roles) {

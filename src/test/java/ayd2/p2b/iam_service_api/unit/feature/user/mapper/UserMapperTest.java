@@ -44,4 +44,35 @@ class UserMapperTest {
 
         assertEquals(Set.of("SYSTEM_ADMIN", "PARTICIPANT"), response.getRoles());
     }
+
+    @Test
+    void should_return_empty_linked_institutions_when_source_linked_institutions_are_null() {
+        UserAccount account = UserAccount.builder()
+                .id(UUID.randomUUID())
+                .email("user@domain.com")
+                .roles(Set.of(Role.PARTICIPANT))
+                .linkedInstitutions(null)
+                .build();
+
+        UserResponse response = mapper.toResponse(account);
+
+        assertNotNull(response.getLinkedInstitutions());
+        assertTrue(response.getLinkedInstitutions().isEmpty());
+    }
+
+    @Test
+    void should_copy_linked_institutions_when_source_linked_institutions_exist() {
+        UUID institutionA = UUID.randomUUID();
+        UUID institutionB = UUID.randomUUID();
+        UserAccount account = UserAccount.builder()
+                .id(UUID.randomUUID())
+                .email("user@domain.com")
+                .roles(Set.of(Role.CONGRESS_ADMIN))
+                .linkedInstitutions(Set.of(institutionA, institutionB))
+                .build();
+
+        UserResponse response = mapper.toResponse(account);
+
+        assertEquals(Set.of(institutionA, institutionB), response.getLinkedInstitutions());
+    }
 }

@@ -28,6 +28,8 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -106,6 +108,27 @@ class RefreshTokenUseCaseTest {
         ApiException exception = assertThrows(ApiException.class, () -> useCase.execute(request));
 
         assertEquals("auth.token_invalid", exception.getCode());
+    }
+
+    @Test
+    void should_fail_refresh_when_token_user_is_not_active_or_does_not_exist() {
+        UUID userId = UUID.randomUUID();
+        ParsedToken token = ParsedToken.builder()
+                .userId(userId).subject(userId.toString()).email(null)
+                .roles(List.of()).tokenType(TokenType.REFRESH).expiresAt(Instant.now().plusSeconds(300))
+                .build();
+        RefreshRequest request = new RefreshRequest();
+        request.setRefreshToken("refresh-token");
+
+        when(tokenParserPort.parseToken("refresh-token", TokenType.REFRESH)).thenReturn(token);
+        when(tokenHashPort.sha256("refresh-token")).thenReturn("hash");
+        when(blacklistPort.existsByTokenHash("hash")).thenReturn(false);
+        when(userRepository.findByIdAndActiveTrue(userId)).thenReturn(Optional.empty());
+
+        ApiException exception = assertThrows(ApiException.class, () -> useCase.execute(request));
+
+        assertEquals("auth.token_invalid", exception.getCode());
+        verify(tokenIssuerPort, never()).generateAccessToken(any(UserAccount.class));
     }
 
     private UserAccount activeUser(UUID userId) {

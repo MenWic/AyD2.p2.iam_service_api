@@ -38,8 +38,17 @@ class GetCurrentUserUseCaseTest {
     @Test
     void should_return_user_profile_when_user_exists_and_active() {
         UUID userId = UUID.randomUUID();
-        UserAccount entity = UserAccount.builder().id(userId).email("participant@domain.com").active(true).roles(Set.of(Role.PARTICIPANT)).build();
-        UserResponse response = UserResponse.builder().id(userId).email("participant@domain.com").roles(Set.of("PARTICIPANT")).build();
+        UserAccount entity = UserAccount.builder()
+                .id(userId)
+                .email("participant@domain.com")
+                .active(true)
+                .roles(Set.of(Role.PARTICIPANT))
+                .build();
+        UserResponse response = UserResponse.builder()
+                .id(userId)
+                .email("participant@domain.com")
+                .roles(Set.of("PARTICIPANT"))
+                .build();
 
         when(userRepository.findByIdAndActiveTrue(userId)).thenReturn(Optional.of(entity));
         when(userMapper.toResponse(entity)).thenReturn(response);
@@ -56,5 +65,15 @@ class GetCurrentUserUseCaseTest {
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
         assertEquals("validation.failed", ex.getCode());
     }
-}
 
+    @Test
+    void should_throw_not_found_when_user_does_not_exist_or_is_inactive() {
+        UUID userId = UUID.randomUUID();
+        when(userRepository.findByIdAndActiveTrue(userId)).thenReturn(Optional.empty());
+
+        ApiException exception = assertThrows(ApiException.class, () -> useCase.execute(userId));
+
+        assertEquals(HttpStatus.NOT_FOUND, exception.getStatus());
+        assertEquals("resource.not_found", exception.getCode());
+    }
+}
