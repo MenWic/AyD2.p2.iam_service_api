@@ -12,26 +12,20 @@ import ayd2.p2b.iam_service_api.feature.user.dto.internal.RequesterContext;
 import ayd2.p2b.iam_service_api.feature.user.dto.request.CreateGuestSpeakerRequest;
 import ayd2.p2b.iam_service_api.feature.user.dto.response.UserResponse;
 import ayd2.p2b.iam_service_api.feature.user.mapper.UserMapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 
 @Component
+@RequiredArgsConstructor
 public class CreateGuestSpeakerUseCase {
 
     private final UserRepositoryPort userRepository;
     private final UserMapper userMapper;
     private final PasswordHasherPort passwordHasher;
 
-    public CreateGuestSpeakerUseCase(
-            UserRepositoryPort userRepository,
-            UserMapper userMapper,
-            PasswordHasherPort passwordHasher) {
-        this.userRepository = userRepository;
-        this.userMapper = userMapper;
-        this.passwordHasher = passwordHasher;
-    }
 
     @Transactional
     public UserResponse execute(RequesterContext requester, CreateGuestSpeakerRequest request) {

@@ -19,6 +19,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -156,6 +157,25 @@ class JpaUserRepositoryAdapterTest extends PostgresDataJpaTestSupport {
         UserEntity persisted = userRepository.findById(saved.getId()).orElseThrow();
         assertTrue(persisted.getRoles().isEmpty());
         assertTrue(persisted.getLinkedInstitutions().isEmpty());
+    }
+
+    @Test
+    void should_return_empty_when_find_by_id_and_active_true_targets_inactive_user() {
+        UserEntity inactive = userRepository.saveAndFlush(
+                entity("inactive-adapter@domain.com", "PID108", false, Set.of(Role.PARTICIPANT), Set.of(), "Inactive Adapter")
+        );
+
+        assertFalse(adapter.findByIdAndActiveTrue(inactive.getId()).isPresent());
+    }
+
+    @Test
+    void should_count_active_users_by_role_through_adapter() {
+        userRepository.saveAndFlush(entity("adapter-active-admin@domain.com", "PID109", true, Set.of(Role.SYSTEM_ADMIN), Set.of(), "Active Admin"));
+        userRepository.saveAndFlush(entity("adapter-inactive-admin@domain.com", "PID110", false, Set.of(Role.SYSTEM_ADMIN), Set.of(), "Inactive Admin"));
+        userRepository.saveAndFlush(entity("adapter-active-participant@domain.com", "PID111", true, Set.of(Role.PARTICIPANT), Set.of(), "Active Participant"));
+
+        assertEquals(1L, adapter.countActiveByRole(Role.SYSTEM_ADMIN));
+        assertEquals(1L, adapter.countActiveByRole(Role.PARTICIPANT));
     }
 
     private UserAccount userAccount(

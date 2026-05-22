@@ -144,6 +144,52 @@ class UserSpecificationTest extends PostgresDataJpaTestSupport {
         assertTrue(result.stream().anyMatch(entity -> entity.getEmail().equals("noop-2@domain.com")));
     }
 
+
+    @Test
+    void should_match_search_by_personal_id_case_insensitively() {
+        userRepository.saveAndFlush(user("personal-search@domain.com", "SpecPid015", true, Set.of(Role.PARTICIPANT), Set.of(), "Personal Search User"));
+
+        List<UserEntity> result = userRepository.findAll(UserSpecification.searchMatches("specpid"));
+
+        assertEquals(1, result.size());
+        assertEquals("SpecPid015", result.getFirst().getPersonalId());
+    }
+
+    @Test
+    void should_apply_composed_role_active_institution_and_search_filters() {
+        UUID institutionA = UUID.randomUUID();
+        UUID institutionB = UUID.randomUUID();
+
+        userRepository.saveAndFlush(user("target-filter@domain.com", "SPEC016", true, Set.of(Role.CONGRESS_ADMIN), Set.of(institutionA), "Target Filter User"));
+        userRepository.saveAndFlush(user("wrong-role@domain.com", "SPEC017", true, Set.of(Role.PARTICIPANT), Set.of(institutionA), "Target Filter User"));
+        userRepository.saveAndFlush(user("wrong-active@domain.com", "SPEC018", false, Set.of(Role.CONGRESS_ADMIN), Set.of(institutionA), "Target Filter User"));
+        userRepository.saveAndFlush(user("wrong-institution@domain.com", "SPEC019", true, Set.of(Role.CONGRESS_ADMIN), Set.of(institutionB), "Target Filter User"));
+        userRepository.saveAndFlush(user("wrong-search@domain.com", "SPEC020", true, Set.of(Role.CONGRESS_ADMIN), Set.of(institutionA), "Different User"));
+
+        Specification<UserEntity> specification = Specification
+                .where(UserSpecification.hasRole(Role.CONGRESS_ADMIN))
+                .and(UserSpecification.isActive(true))
+                .and(UserSpecification.hasInstitution(institutionA))
+                .and(UserSpecification.searchMatches("target filter"));
+
+        List<UserEntity> result = userRepository.findAll(specification);
+
+        assertEquals(1, result.size());
+        assertEquals("target-filter@domain.com", result.getFirst().getEmail());
+    }
+
+    @Test
+    void should_treat_empty_institution_scope_as_no_op_conjunction() {
+        userRepository.saveAndFlush(user("empty-scope-1@domain.com", "SPEC021", true, Set.of(Role.PARTICIPANT), Set.of()));
+        userRepository.saveAndFlush(user("empty-scope-2@domain.com", "SPEC022", true, Set.of(Role.CONGRESS_ADMIN), Set.of(UUID.randomUUID())));
+
+        List<UserEntity> result = userRepository.findAll(UserSpecification.hasAnyInstitution(Set.of()));
+
+        assertEquals(2, result.size());
+        assertTrue(result.stream().anyMatch(entity -> entity.getEmail().equals("empty-scope-1@domain.com")));
+        assertTrue(result.stream().anyMatch(entity -> entity.getEmail().equals("empty-scope-2@domain.com")));
+    }
+
     private UserEntity user(String email, String personalId, boolean active, Set<Role> roles, Set<UUID> institutions) {
         return user(email, personalId, active, roles, institutions, "Spec User " + personalId);
     }

@@ -10,6 +10,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,13 +22,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
+@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final TokenParserPort tokenParserPort;
-
-    public JwtAuthenticationFilter(TokenParserPort tokenParserPort) {
-        this.tokenParserPort = tokenParserPort;
-    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
@@ -50,7 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     roles.stream().map(role -> new SimpleGrantedAuthority("ROLE_" + role.name())).toList()
             );
             SecurityContextHolder.getContext().setAuthentication(authentication);
-        } catch (ApiException ex) {
+        } catch (ApiException | IllegalArgumentException ex) {
             SecurityContextHolder.clearContext();
         }
 

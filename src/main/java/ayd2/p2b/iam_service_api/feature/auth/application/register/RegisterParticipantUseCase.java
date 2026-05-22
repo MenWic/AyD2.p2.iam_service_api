@@ -13,12 +13,14 @@ import ayd2.p2b.iam_service_api.feature.user.application.port.UserRepositoryPort
 import ayd2.p2b.iam_service_api.feature.user.application.exception.UserExceptions;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.Role;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.UserAccount;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 
 @Component
+@RequiredArgsConstructor
 public class RegisterParticipantUseCase {
 
     private final UserRepositoryPort userRepository;
@@ -26,16 +28,6 @@ public class RegisterParticipantUseCase {
     private final PasswordHasherPort passwordHasher;
     private final TokenIssuerPort tokenIssuerPort;
 
-    public RegisterParticipantUseCase(
-            UserRepositoryPort userRepository,
-            UserMapper userMapper,
-            PasswordHasherPort passwordHasher,
-            TokenIssuerPort tokenIssuerPort) {
-        this.userRepository = userRepository;
-        this.userMapper = userMapper;
-        this.passwordHasher = passwordHasher;
-        this.tokenIssuerPort = tokenIssuerPort;
-    }
 
     @Transactional
     public AuthResponse execute(RegisterUserRequest request) {

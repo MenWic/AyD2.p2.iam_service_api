@@ -51,6 +51,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import lombok.RequiredArgsConstructor;
 
 import java.net.URI;
 import java.util.UUID;
@@ -58,6 +59,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/users")
 @Tag(name = "Users")
+@RequiredArgsConstructor
 public class UserController {
 
         private static final int DEFAULT_PAGE = 0;
@@ -75,31 +77,6 @@ public class UserController {
         private final CreateGuestSpeakerUseCase createGuestSpeakerUseCase;
         private final UpdateUserUseCase updateUserUseCase;
         private final CanBeCommitteeUseCase canBeCommitteeUseCase;
-
-        public UserController(
-                        RegisterParticipantUseCase registerParticipantUseCase,
-                        GetCurrentUserUseCase getCurrentUserUseCase,
-                        GetUserByIdUseCase getUserByIdUseCase,
-                        ListUsersUseCase listUsersUseCase,
-                        ActivateUserUseCase activateUserUseCase,
-                        DeactivateUserUseCase deactivateUserUseCase,
-                        CreateSystemAdminUseCase createSystemAdminUseCase,
-                        CreateCongressAdminUseCase createCongressAdminUseCase,
-                        CreateGuestSpeakerUseCase createGuestSpeakerUseCase,
-                        UpdateUserUseCase updateUserUseCase,
-                        CanBeCommitteeUseCase canBeCommitteeUseCase) {
-                this.registerParticipantUseCase = registerParticipantUseCase;
-                this.getCurrentUserUseCase = getCurrentUserUseCase;
-                this.getUserByIdUseCase = getUserByIdUseCase;
-                this.listUsersUseCase = listUsersUseCase;
-                this.activateUserUseCase = activateUserUseCase;
-                this.deactivateUserUseCase = deactivateUserUseCase;
-                this.createSystemAdminUseCase = createSystemAdminUseCase;
-                this.createCongressAdminUseCase = createCongressAdminUseCase;
-                this.createGuestSpeakerUseCase = createGuestSpeakerUseCase;
-                this.updateUserUseCase = updateUserUseCase;
-                this.canBeCommitteeUseCase = canBeCommitteeUseCase;
-        }
 
         @PostMapping("/register")
         @Operation(summary = "Self register participant", description = "Public endpoint. Registers a PARTICIPANT. personalId is required, alphanumeric, and unique.")

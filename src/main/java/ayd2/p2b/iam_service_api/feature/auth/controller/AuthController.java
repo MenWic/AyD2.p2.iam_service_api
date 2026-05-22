@@ -29,21 +29,17 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/auth")
 @Tag(name = "Auth")
+@RequiredArgsConstructor
 public class AuthController {
 
     private final LoginUseCase loginUseCase;
     private final RefreshTokenUseCase refreshTokenUseCase;
     private final LogoutUseCase logoutUseCase;
-
-    public AuthController(LoginUseCase loginUseCase, RefreshTokenUseCase refreshTokenUseCase, LogoutUseCase logoutUseCase) {
-        this.loginUseCase = loginUseCase;
-        this.refreshTokenUseCase = refreshTokenUseCase;
-        this.logoutUseCase = logoutUseCase;
-    }
 
     @PostMapping("/login")
     @Operation(

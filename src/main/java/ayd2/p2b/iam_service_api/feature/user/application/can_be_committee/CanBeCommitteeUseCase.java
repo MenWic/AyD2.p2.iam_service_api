@@ -6,19 +6,18 @@ import ayd2.p2b.iam_service_api.feature.user.domain.model.Role;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.UserAccount;
 import ayd2.p2b.iam_service_api.feature.user.dto.internal.RequesterContext;
 import ayd2.p2b.iam_service_api.feature.user.dto.response.CommitteeEligibilityResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class CanBeCommitteeUseCase {
 
     private final UserRepositoryPort userRepository;
 
-    public CanBeCommitteeUseCase(UserRepositoryPort userRepository) {
-        this.userRepository = userRepository;
-    }
 
     @Transactional(readOnly = true)
     public CommitteeEligibilityResponse execute(RequesterContext requester, UUID targetUserId) {

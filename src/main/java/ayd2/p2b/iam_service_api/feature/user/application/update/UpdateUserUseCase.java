@@ -9,21 +9,19 @@ import ayd2.p2b.iam_service_api.feature.user.dto.internal.RequesterContext;
 import ayd2.p2b.iam_service_api.feature.user.dto.request.UpdateUserRequest;
 import ayd2.p2b.iam_service_api.feature.user.dto.response.UserResponse;
 import ayd2.p2b.iam_service_api.feature.user.mapper.UserMapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class UpdateUserUseCase {
 
     private final UserRepositoryPort userRepository;
     private final UserMapper userMapper;
 
-    public UpdateUserUseCase(UserRepositoryPort userRepository, UserMapper userMapper) {
-        this.userRepository = userRepository;
-        this.userMapper = userMapper;
-    }
 
     @Transactional
     public UserResponse execute(RequesterContext requester, UUID targetUserId, UpdateUserRequest request) {

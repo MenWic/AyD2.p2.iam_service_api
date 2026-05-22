@@ -11,10 +11,12 @@ import ayd2.p2b.iam_service_api.feature.auth.application.port.TokenParserPort;
 import ayd2.p2b.iam_service_api.feature.user.application.port.UserRepositoryPort;
 import ayd2.p2b.iam_service_api.feature.auth.domain.model.TokenType;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.UserAccount;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 @Component
+@RequiredArgsConstructor
 public class RefreshTokenUseCase {
 
     private final UserRepositoryPort userRepository;
@@ -23,19 +25,6 @@ public class RefreshTokenUseCase {
     private final TokenParserPort tokenParserPort;
     private final TokenHashPort tokenHashPort;
 
-    public RefreshTokenUseCase(
-            UserRepositoryPort userRepository,
-            RefreshTokenBlacklistPort blacklistPort,
-            TokenIssuerPort tokenIssuerPort,
-            TokenParserPort tokenParserPort,
-            TokenHashPort tokenHashPort
-    ) {
-        this.userRepository = userRepository;
-        this.blacklistPort = blacklistPort;
-        this.tokenIssuerPort = tokenIssuerPort;
-        this.tokenParserPort = tokenParserPort;
-        this.tokenHashPort = tokenHashPort;
-    }
 
     @Transactional(readOnly = true)
     public RefreshResponse execute(RefreshRequest request) {

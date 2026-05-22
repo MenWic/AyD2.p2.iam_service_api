@@ -75,18 +75,7 @@ class LoginUseCaseTest {
     void should_fail_login_when_user_is_inactive() {
         LoginRequest request = loginRequest("MyStrongPassword123");
         UserAccount user = activeUser();
-        user = UserAccount.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .passwordHash(user.getPasswordHash())
-                .fullName(user.getFullName())
-                .organization(user.getOrganization())
-                .phone(user.getPhone())
-                .personalId(user.getPersonalId())
-                .photoUrl(user.getPhotoUrl())
-                .active(false)
-                .roles(user.getRoles())
-                .build();
+        user = UserAccount.builder().id(user.getId()).email(user.getEmail()).passwordHash(user.getPasswordHash()).fullName(user.getFullName()).organization(user.getOrganization()).phone(user.getPhone()).personalId(user.getPersonalId()).photoUrl(user.getPhotoUrl()).active(false).roles(user.getRoles()).build();
         when(userRepository.findByEmailIgnoreCase("participant@domain.com")).thenReturn(Optional.of(user));
 
         ApiException exception = assertThrows(ApiException.class, () -> useCase.execute(request));
@@ -133,11 +122,22 @@ class LoginUseCaseTest {
         ApiException nullRolesException = assertThrows(ApiException.class, () -> useCase.execute(request));
         assertEquals("domain.invariant_violated", nullRolesException.getCode());
 
-        when(userRepository.findByEmailIgnoreCase("participant@domain.com"))
-                .thenReturn(Optional.of(userWithEmptyRoles));
+        when(userRepository.findByEmailIgnoreCase("participant@domain.com")).thenReturn(Optional.of(userWithEmptyRoles));
 
         ApiException emptyRolesException = assertThrows(ApiException.class, () -> useCase.execute(request));
         assertEquals("domain.invariant_violated", emptyRolesException.getCode());
+    }
+
+    @Test
+    void should_fail_login_when_active_user_has_null_password_hash() {
+        LoginRequest request = loginRequest("MyStrongPassword123");
+        UserAccount userWithoutPassword = activeUser().toBuilder().passwordHash(null).build();
+        when(userRepository.findByEmailIgnoreCase("participant@domain.com")).thenReturn(Optional.of(userWithoutPassword));
+
+        ApiException exception = assertThrows(ApiException.class, () -> useCase.execute(request));
+
+        assertEquals("auth.invalid_credentials", exception.getCode());
+        verify(passwordHasher, never()).matches("MyStrongPassword123", null);
     }
 
     private LoginRequest loginRequest(String password) {
@@ -148,29 +148,10 @@ class LoginUseCaseTest {
     }
 
     private UserAccount activeUser() {
-        return UserAccount.builder()
-                .id(UUID.randomUUID())
-                .email("participant@domain.com")
-                .passwordHash("hashed_password")
-                .fullName("Participant User")
-                .organization("Code n Bugs")
-                .phone("555-0101")
-                .personalId("A123B")
-                .active(true)
-                .roles(Set.of(Role.PARTICIPANT))
-                .build();
+        return UserAccount.builder().id(UUID.randomUUID()).email("participant@domain.com").passwordHash("hashed_password").fullName("Participant User").organization("Code n Bugs").phone("555-0101").personalId("A123B").active(true).roles(Set.of(Role.PARTICIPANT)).build();
     }
 
     private UserResponse userResponse() {
-        return UserResponse.builder()
-                .id(UUID.randomUUID())
-                .email("participant@domain.com")
-                .fullName("Participant User")
-                .organization("Code n Bugs")
-                .phone("555-0101")
-                .personalId("A123B")
-                .active(true)
-                .roles(Set.of("PARTICIPANT"))
-                .build();
+        return UserResponse.builder().id(UUID.randomUUID()).email("participant@domain.com").fullName("Participant User").organization("Code n Bugs").phone("555-0101").personalId("A123B").active(true).roles(Set.of("PARTICIPANT")).build();
     }
 }
