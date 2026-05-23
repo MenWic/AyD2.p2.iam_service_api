@@ -67,3 +67,7 @@ Thumbs.db
 ### Local Database ###
 *.db
 *.sqlite
+
+
+### Others ###
+init-db/
