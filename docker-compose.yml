@@ -1,0 +1,42 @@
+services:
+
+  iam-postgres:
+    image: postgres:17
+    container_name: iam-postgres
+    environment:
+      POSTGRES_DB: iam_db
+      POSTGRES_USER: iam_service_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - iam_pgdata:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d
+    ports:
+      - "127.0.0.1:5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U iam_service_user -d iam_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  iam-service:
+    image: registry.digitalocean.com/ayd2-p2/iam-service:latest
+    container_name: iam-service
+    depends_on:
+      iam-postgres:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://iam-postgres:5432/iam_db
+      SPRING_DATASOURCE_USERNAME: iam_service_user
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://${EUREKA_HOST}:8761/eureka/
+      EUREKA_INSTANCE_PREFERIPADDRESS: "true"
+      SPRING_FLYWAY_URL: jdbc:postgresql://iam-postgres:5432/iam_db
+      SPRING_FLYWAY_USER: iam_service_user
+      SPRING_FLYWAY_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+
+volumes:
+  iam_pgdata:

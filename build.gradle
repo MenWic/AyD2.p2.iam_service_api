@@ -125,3 +125,7 @@ tasks.named('check') {
 tasks.register('verify') {
     dependsOn tasks.named('jacocoTestCoverageVerification')
 }
+
+tasks.bootJar {
+   archiveFileName.set("application.jar") 
+}
