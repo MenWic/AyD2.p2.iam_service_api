@@ -1,4 +1,4 @@
-name: Publish to DigitalOcean Container Registry - Build & Push
+name: Publish to DigitalOcean Container Registry and Deploy to Droplet - Build, Push, and Deploy Docker Image
 
 on:
   push:
@@ -51,3 +51,19 @@ jobs:
 
           docker push $REGISTRY/iam-service:$SHORT_SHA
           docker push $REGISTRY/iam-service:latest
+
+       # ── Deploy al Droplet via SSH ──────────────────
+
+      - name: Deploy al Droplet via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: root
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          script: |
+            cd /opt/iam-service
+            echo ${{ secrets.DIGITALOCEAN_ACCESS_TOKEN }} | \
+              docker login registry.digitalocean.com --username ignored --password-stdin
+            docker compose pull
+            docker compose up -d --remove-orphans
+            docker image prune -f
