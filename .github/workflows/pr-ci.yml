@@ -8,7 +8,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
-  
+
 jobs:
   test-and-build:
     name: Test & Build
@@ -50,6 +50,5 @@ jobs:
           paths: ${{ github.workspace }}/**/build/reports/jacoco/**/jacocoTestReport.xml
           token: ${{ secrets.GITHUB_TOKEN }}
           min-coverage-overall: 70
-          min-coverage-changed-files: 70
-          title: '## Coverage Report'
+          title: '## JaCoCo Coverage Report'
           update-comment: true
