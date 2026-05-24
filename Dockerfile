@@ -4,6 +4,9 @@ FROM gradle:jdk21-corretto
 # Copy project files into the container
 COPY . /app
 
+# Copy the production configuration file
+COPY src/main/resources/application.prod.properties /app/src/main/resources/application.properties
+
 # Set the working directory
 WORKDIR /app
 
