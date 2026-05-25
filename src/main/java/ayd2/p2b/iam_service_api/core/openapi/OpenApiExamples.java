@@ -86,6 +86,16 @@ public final class OpenApiExamples {
             }
             """;
 
+    public static final String INTERNAL_USER_IDENTITY_SUCCESS = """
+            {
+              "data": {
+                "id": "11111111-1111-1111-1111-111111111111",
+                "personalId": "A123B"
+              },
+              "message": null
+            }
+            """;
+
     public static final String PAGED_USERS_SUCCESS = """
             {
               "data": {
@@ -141,6 +151,16 @@ public final class OpenApiExamples {
               "status": 401,
               "detail": "Invalid authentication",
               "code": "auth.token_invalid"
+            }
+            """;
+
+    public static final String SERVICE_TOKEN_INVALID_ERROR = """
+            {
+              "type": "about:blank",
+              "title": "Unauthorized",
+              "status": 401,
+              "detail": "Invalid service token",
+              "code": "auth.service_token_invalid"
             }
             """;
 

@@ -10,6 +10,7 @@ import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabas
 import org.springframework.dao.DataIntegrityViolationException;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -69,6 +70,38 @@ class UserRepositoryTest extends PostgresDataJpaTestSupport {
         UserEntity saved = userRepository.saveAndFlush(user("inactive@domain.com", "INA001", false, Set.of(Role.PARTICIPANT), Set.of()));
 
         assertFalse(userRepository.findByIdAndActiveTrue(saved.getId()).isPresent());
+    }
+
+    @Test
+    void should_find_active_users_by_personal_id_ignoring_case() {
+        UserEntity active = userRepository.saveAndFlush(user("active-lookup@domain.com", "CasePid001", true, Set.of(Role.PARTICIPANT), Set.of()));
+        userRepository.saveAndFlush(user("inactive-lookup@domain.com", "CASEPID001", false, Set.of(Role.PARTICIPANT), Set.of()));
+
+        List<UserEntity> result = userRepository.findAllByPersonalIdIgnoreCaseAndActiveTrue("casepid001");
+
+        assertEquals(1, result.size());
+        assertEquals(active.getId(), result.getFirst().getId());
+    }
+
+    @Test
+    void should_not_return_inactive_users_when_searching_active_users_by_personal_id() {
+        userRepository.saveAndFlush(user("inactive-only@domain.com", "Inactive001", false, Set.of(Role.PARTICIPANT), Set.of()));
+
+        List<UserEntity> result = userRepository.findAllByPersonalIdIgnoreCaseAndActiveTrue("inactive001");
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void should_return_multiple_active_rows_for_case_variant_personal_id_duplicates() {
+        UserEntity first = userRepository.saveAndFlush(user("dup-case-1@domain.com", "DupCase001", true, Set.of(Role.PARTICIPANT), Set.of()));
+        UserEntity second = userRepository.saveAndFlush(user("dup-case-2@domain.com", "dupCASE001", true, Set.of(Role.PARTICIPANT), Set.of()));
+
+        List<UserEntity> result = userRepository.findAllByPersonalIdIgnoreCaseAndActiveTrue("DUPCASE001");
+
+        assertEquals(2, result.size());
+        assertTrue(result.stream().anyMatch(user -> user.getId().equals(first.getId())));
+        assertTrue(result.stream().anyMatch(user -> user.getId().equals(second.getId())));
     }
 
     @Test

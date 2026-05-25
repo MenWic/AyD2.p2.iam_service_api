@@ -24,6 +24,10 @@ public final class UserExceptions {
         return new ApiException(HttpStatus.CONFLICT, "resource.conflict", "Personal ID already registered");
     }
 
+    public static ApiException multipleActiveUsersForPersonalId() {
+        return new ApiException(HttpStatus.CONFLICT, "resource.conflict", "Multiple active users found for personalId");
+    }
+
     public static ApiException invalidPersonalId() {
         return new ApiException(HttpStatus.BAD_REQUEST, "validation.failed", "Invalid personalId format");
     }

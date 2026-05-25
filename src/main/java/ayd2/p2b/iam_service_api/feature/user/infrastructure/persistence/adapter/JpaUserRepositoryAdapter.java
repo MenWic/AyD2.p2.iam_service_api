@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import lombok.RequiredArgsConstructor;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -37,6 +38,13 @@ public class JpaUserRepositoryAdapter implements UserRepositoryPort {
     @Override
     public Optional<UserAccount> findByIdAndActiveTrue(UUID id) {
         return userRepository.findByIdAndActiveTrue(id).map(this::toDomain);
+    }
+
+    @Override
+    public List<UserAccount> findActiveUsersByPersonalIdIgnoreCase(String personalId) {
+        return userRepository.findAllByPersonalIdIgnoreCaseAndActiveTrue(personalId).stream()
+                .map(this::toDomain)
+                .toList();
     }
 
     @Override

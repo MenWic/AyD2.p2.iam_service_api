@@ -68,6 +68,7 @@ eureka.client.enabled=false
 security.jwt.secret=${SECURITY_JWT_SECRET:your_jwt_secret_at_least_32_chars_here}
 security.jwt.expiration-minutes=${SECURITY_JWT_EXPIRATION_MINUTES:15}
 security.jwt.refresh-expiration-days=${SECURITY_JWT_REFRESH_EXPIRATION_DAYS:7}
+security.internal.service-token=${IAM_INTERNAL_SERVICE_TOKEN:}
 
 # ============================================================
 # CORS local
