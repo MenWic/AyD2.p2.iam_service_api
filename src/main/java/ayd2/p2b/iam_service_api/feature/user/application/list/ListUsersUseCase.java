@@ -63,6 +63,16 @@ public class ListUsersUseCase {
             );
         }
 
+        if (normalizedCriteria.getRole() == Role.GUEST_SPEAKER) {
+            return fetchPage(
+                    normalizedCriteria.toBuilder()
+                            .scopedInstitutionIds(null)
+                            .createdBy(requester.getUserId())
+                            .build(),
+                    effectivePageable
+            );
+        }
+
         UUID requestedInstitution = normalizedCriteria.getInstitutionId();
         if (requestedInstitution != null) {
             if (!requesterInstitutions.contains(requestedInstitution)) {

@@ -15,4 +15,5 @@ public class UserSearchCriteria {
     UUID institutionId;
     String search;
     Set<UUID> scopedInstitutionIds;
+    UUID createdBy;
 }
