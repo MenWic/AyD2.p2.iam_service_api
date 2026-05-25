@@ -71,13 +71,47 @@ class GetUserByIdUseCaseTest {
     }
 
     @Test
-    void should_return_user_when_congress_admin_shares_institution() {
+    void should_return_participant_when_congress_admin_requests() {
+        UUID requesterId = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
+        RequesterContext requester = new RequesterContext(requesterId, Set.of(Role.CONGRESS_ADMIN));
+        UserAccount target = user(targetId, Set.of(Role.PARTICIPANT), Set.of());
+        UserResponse response = response(targetId);
+
+        when(userRepository.findById(targetId)).thenReturn(Optional.of(target));
+        when(userMapper.toResponse(target)).thenReturn(response);
+
+        UserResponse result = useCase.execute(requester, targetId);
+
+        assertEquals(targetId, result.getId());
+        verify(userRepository, never()).findById(requesterId);
+    }
+
+    @Test
+    void should_return_guest_speaker_when_congress_admin_requests() {
+        UUID requesterId = UUID.randomUUID();
+        UUID targetId = UUID.randomUUID();
+        RequesterContext requester = new RequesterContext(requesterId, Set.of(Role.CONGRESS_ADMIN));
+        UserAccount target = user(targetId, Set.of(Role.GUEST_SPEAKER), Set.of());
+        UserResponse response = response(targetId);
+
+        when(userRepository.findById(targetId)).thenReturn(Optional.of(target));
+        when(userMapper.toResponse(target)).thenReturn(response);
+
+        UserResponse result = useCase.execute(requester, targetId);
+
+        assertEquals(targetId, result.getId());
+        verify(userRepository, never()).findById(requesterId);
+    }
+
+    @Test
+    void should_return_congress_admin_when_requester_shares_institution() {
         UUID requesterId = UUID.randomUUID();
         UUID targetId = UUID.randomUUID();
         UUID sharedInstitution = UUID.randomUUID();
         RequesterContext requester = new RequesterContext(requesterId, Set.of(Role.CONGRESS_ADMIN));
         UserAccount requesterAccount = user(requesterId, Set.of(Role.CONGRESS_ADMIN), Set.of(sharedInstitution));
-        UserAccount target = user(targetId, Set.of(Role.PARTICIPANT), Set.of(sharedInstitution));
+        UserAccount target = user(targetId, Set.of(Role.CONGRESS_ADMIN), Set.of(sharedInstitution));
         UserResponse response = response(targetId);
 
         when(userRepository.findById(targetId)).thenReturn(Optional.of(target));
@@ -90,12 +124,12 @@ class GetUserByIdUseCaseTest {
     }
 
     @Test
-    void should_throw_forbidden_when_congress_admin_does_not_share_institution() {
+    void should_throw_forbidden_when_congress_admin_does_not_share_institution_with_target_admin() {
         UUID requesterId = UUID.randomUUID();
         UUID targetId = UUID.randomUUID();
         RequesterContext requester = new RequesterContext(requesterId, Set.of(Role.CONGRESS_ADMIN));
         UserAccount requesterAccount = user(requesterId, Set.of(Role.CONGRESS_ADMIN), Set.of(UUID.randomUUID()));
-        UserAccount target = user(targetId, Set.of(Role.PARTICIPANT), Set.of(UUID.randomUUID()));
+        UserAccount target = user(targetId, Set.of(Role.CONGRESS_ADMIN), Set.of(UUID.randomUUID()));
 
         when(userRepository.findById(targetId)).thenReturn(Optional.of(target));
         when(userRepository.findById(requesterId)).thenReturn(Optional.of(requesterAccount));

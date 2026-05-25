@@ -42,6 +42,18 @@ public class GetUserByIdUseCase {
         UserAccount targetUser = userRepository.findById(targetUserId)
                 .orElseThrow(UserExceptions::notFound);
 
+        // PARTICIPANT and GUEST_SPEAKER accounts have no linked institutions.
+        // A CONGRESS_ADMIN may view any participant or guest speaker — they enroll
+        // in congresses, not institutions, so institution-intersection is not applicable.
+        Set<Role> targetRoles = targetUser.getRoles() == null ? Set.of() : targetUser.getRoles();
+        boolean targetIsParticipantOrGuest = targetRoles.contains(Role.PARTICIPANT)
+                || targetRoles.contains(Role.GUEST_SPEAKER);
+        if (targetIsParticipantOrGuest) {
+            return userMapper.toResponse(targetUser);
+        }
+
+        // For other privileged accounts (CONGRESS_ADMIN, SYSTEM_ADMIN), require a
+        // shared institution between the requester and the target.
         UserAccount requesterAccount = userRepository.findById(requester.getUserId())
                 .orElseThrow(UserExceptions::notFound);
 
