@@ -63,6 +63,15 @@ public final class UserSpecification {
         };
     }
 
+    public static Specification<UserEntity> createdBy(UUID createdBy) {
+        return (root, query, criteriaBuilder) -> {
+            if (createdBy == null) {
+                return criteriaBuilder.conjunction();
+            }
+            return criteriaBuilder.equal(root.get("createdBy"), createdBy);
+        };
+    }
+
     public static Specification<UserEntity> searchMatches(String search) {
         return (root, query, criteriaBuilder) -> {
             if (search == null || search.isBlank()) {

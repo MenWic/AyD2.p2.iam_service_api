@@ -55,6 +55,7 @@ public class JpaUserRepositoryAdapter implements UserRepositoryPort {
                 .and(UserSpecification.isActive(effectiveCriteria.getActive()))
                 .and(UserSpecification.hasInstitution(effectiveCriteria.getInstitutionId()))
                 .and(UserSpecification.hasAnyInstitution(effectiveCriteria.getScopedInstitutionIds()))
+                .and(UserSpecification.createdBy(effectiveCriteria.getCreatedBy()))
                 .and(UserSpecification.searchMatches(effectiveCriteria.getSearch()));
 
         return userRepository.findAll(specification, pageable).map(this::toDomain);
