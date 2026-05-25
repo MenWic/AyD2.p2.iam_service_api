@@ -1,6 +1,7 @@
 package ayd2.p2b.iam_service_api.feature.user.mapper;
 
 import ayd2.p2b.iam_service_api.feature.user.dto.response.UserResponse;
+import ayd2.p2b.iam_service_api.feature.user.dto.response.InternalUserIdentityResponse;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.Role;
 import ayd2.p2b.iam_service_api.feature.user.domain.model.UserAccount;
 import org.mapstruct.Mapper;
@@ -17,6 +18,8 @@ public interface UserMapper {
     @Mapping(target = "roles", source = "roles", qualifiedByName = "mapRoles")
     @Mapping(target = "linkedInstitutions", source = "linkedInstitutions", qualifiedByName = "mapLinkedInstitutions")
     UserResponse toResponse(UserAccount account);
+
+    InternalUserIdentityResponse toInternalIdentityResponse(UserAccount account);
 
     @Named("mapRoles")
     default Set<String> mapRoles(Set<Role> roles) {

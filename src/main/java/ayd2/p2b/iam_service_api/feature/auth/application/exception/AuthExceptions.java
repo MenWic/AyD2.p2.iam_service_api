@@ -23,4 +23,8 @@ public final class AuthExceptions {
     public static ApiException validationFailed(String message) {
         return new ApiException(HttpStatus.BAD_REQUEST, "validation.failed", message);
     }
+
+    public static ApiException serviceTokenInvalid() {
+        return new ApiException(HttpStatus.UNAUTHORIZED, "auth.service_token_invalid", "Invalid service token");
+    }
 }

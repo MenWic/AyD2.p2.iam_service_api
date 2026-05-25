@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -15,6 +16,8 @@ public interface UserRepository extends JpaRepository<UserEntity, UUID>, JpaSpec
     Optional<UserEntity> findByEmailIgnoreCase(String email);
 
     Optional<UserEntity> findByIdAndActiveTrue(UUID id);
+
+    List<UserEntity> findAllByPersonalIdIgnoreCaseAndActiveTrue(String personalId);
 
     boolean existsByEmailIgnoreCase(String email);
 
